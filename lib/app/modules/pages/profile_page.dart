@@ -96,7 +96,7 @@ class ProfilePage extends StatelessWidget {
                     ),
                     child: ListTile(
                       title: const Text(
-                        '.',
+                        'Nizar Ali',
                         style: TextStyle(
                           fontSize: 16,
                           color: Color.fromARGB(255, 51, 51, 51),

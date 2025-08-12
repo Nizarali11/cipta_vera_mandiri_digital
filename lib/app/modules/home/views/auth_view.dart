@@ -19,8 +19,10 @@ class AuthView extends StatefulWidget {
 
 class _AuthViewState extends State<AuthView> {
   bool showLogin = true;
+  // ignore: unused_field
   int _selectedIndex = 0;
 
+  // ignore: unused_field
   final List<Widget> _pages = const [
     HomeView(),
     ChatPage(),

@@ -19,7 +19,7 @@ class HomeView extends GetView<HomeController> {
             end: Alignment.bottomCenter,
             colors: [
             Color.fromARGB(255, 255, 255, 255),
-              const Color.fromARGB(255, 18, 179, 254),
+          Color.fromARGB(255, 255, 255, 255),
             ],
             stops: [0.5, 2.0],
           ),
