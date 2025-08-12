@@ -1,10 +1,10 @@
 import 'package:cipta_vera_mandiri_digital/app/modules/home/controllers/home_controller.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/views/auth_view.dart';
-import 'package:cipta_vera_mandiri_digital/app/modules/home/views/home_view.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/views/login_view.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
+import 'package:cipta_vera_mandiri_digital/app/modules/pages/homepage.dart';
 import 'app/routes/app_pages.dart';
 
 
@@ -29,7 +29,7 @@ void main() {
               Get.toNamed('/signup');
             },
             onLoginSuccess: () {
-              Get.offAll(() => const HomeView());
+              Get.offAll(() => const HomePage());
             },
           ),
       getPages: AppPages.routes,

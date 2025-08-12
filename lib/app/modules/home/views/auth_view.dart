@@ -81,37 +81,6 @@ class _AuthViewState extends State<AuthView> {
                   index: _selectedIndex,
                   children: _pages,
                 ),
-                bottomNavigationBar: BottomNavigationBar(
-                  currentIndex: _selectedIndex,
-                  onTap: (index) {
-                    setState(() {
-                      _selectedIndex = index;
-                    });
-                  },
-                  type: BottomNavigationBarType.fixed,
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.home),
-                      label: 'Home',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.chat),
-                      label: 'Chat',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.calendar_today),
-                      label: 'Calendar',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.person),
-                      label: 'Profile',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.settings),
-                      label: 'Settings',
-                    ),
-                  ],
-                ),
               ),
       ),
     );

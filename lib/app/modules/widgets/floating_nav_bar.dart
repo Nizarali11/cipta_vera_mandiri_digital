@@ -17,19 +17,19 @@ class CustomBottomNavBar extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(0),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+        filter: ImageFilter.blur(sigmaX: 120, sigmaY: 120),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.0),
+            color: Colors.transparent.withOpacity(0.0),
             borderRadius: BorderRadius.circular(0),
             border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: Offset(0, 0),
-              ),
-            ],
+            //boxShadow: [
+             // BoxShadow(
+               // color: Colors.black.withOpacity(0.05),
+               // blurRadius: 10,
+               // offset: Offset(0, 0),
+              //),
+            //],
           ),
           padding: const EdgeInsets.symmetric(vertical: 15),
           child: Row(
@@ -63,7 +63,7 @@ class CustomBottomNavBar extends StatelessWidget {
                   label = 'Home';
               }
               final selected = index == currentIndex;
-              final color = selected ? const Color.fromARGB(255, 16, 93, 151) : const Color.fromARGB(255, 255, 252, 252);
+              final color = selected ? const Color.fromARGB(255, 51, 144, 215) : const Color.fromARGB(255, 108, 108, 108);
 
               return InkWell(
                 onTap: () => onTap?.call(index),

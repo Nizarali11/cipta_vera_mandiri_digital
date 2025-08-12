@@ -18,7 +18,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
-  late PageController _pageController;
 
   final List<Widget> _pages = const [
     HomeView(),
@@ -29,27 +28,10 @@ class _HomePageState extends State<HomePage> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(initialPage: currentIndex);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
+      body: IndexedStack(
+        index: currentIndex,
         children: _pages,
       ),
       bottomNavigationBar: CustomBottomNavBar(
@@ -58,7 +40,6 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             currentIndex = index;
           });
-          _pageController.jumpToPage(index);
         },
       ),
     );
