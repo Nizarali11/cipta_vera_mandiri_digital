@@ -13,7 +13,7 @@ class SettingsPage extends StatelessWidget {
             end: Alignment.bottomCenter,
             colors: [
               Color.fromARGB(255, 255, 255, 255),
-              Color.fromARGB(255, 18, 179, 254),
+           Color.fromARGB(255, 255, 255, 255),
             ],
             stops: [0.5, 2.0],
           ),
@@ -29,7 +29,7 @@ class SettingsPage extends StatelessWidget {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 26),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
