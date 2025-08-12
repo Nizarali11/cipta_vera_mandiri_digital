@@ -1,6 +1,7 @@
 import 'package:cipta_vera_mandiri_digital/app/modules/home/controllers/home_controller.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/views/auth_view.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/views/login_view.dart';
+import 'package:cipta_vera_mandiri_digital/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -10,30 +11,11 @@ import 'app/routes/app_pages.dart';
 
 
 void main() {
-  Get.put(HomeController());
-  bool isLoggedIn = false; // nanti diganti cek autentikasi
-
-  final usernameController = TextEditingController();
-  final passwordController = TextEditingController();
-  
-  runApp(
+   runApp(
     GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      home: isLoggedIn 
-        // ignore: dead_code
-        ? const AuthView() 
-        : LoginView(
-            usernameController: usernameController,
-            passwordController: passwordController,
-            onSignUpTap: () {
-              Get.toNamed('/signup');
-            },
-            onLoginSuccess: () {
-              Get.offAll(() => const HomePage());
-            },
-          ),
-      getPages: AppPages.routes,
+      initialRoute: Routes.LOGIN,   // Mulai dari halaman login
+      getPages: AppPages.routes,    // Daftar route yang sudah kamu definisikan
     ),
   );
-  
 }

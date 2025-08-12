@@ -3,10 +3,12 @@ import 'package:cipta_vera_mandiri_digital/app/modules/pages/calendar_page.dart'
 import 'package:cipta_vera_mandiri_digital/app/modules/pages/chat_page.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/pages/profile_page.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/pages/settings_page.dart';
+import 'package:cipta_vera_mandiri_digital/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'login_view.dart' as my_views;
+import 'signup_view.dart' as my_views;
 
 class AuthView extends StatefulWidget {
   const AuthView({super.key});
@@ -17,8 +19,10 @@ class AuthView extends StatefulWidget {
 
 class _AuthViewState extends State<AuthView> {
   bool showLogin = true;
+  // ignore: unused_field
   int _selectedIndex = 0;
 
+  // ignore: unused_field
   final List<Widget> _pages = const [
     HomeView(),
     ChatPage(),
@@ -38,16 +42,21 @@ class _AuthViewState extends State<AuthView> {
 
   void _goToSignup() => setState(() => showLogin = false);
 
+  void _goToLogin() => setState(() => showLogin = true);
+
   void _login() {
     const dummyUsername = 'admin';
     const dummyPassword = '123456';
 
+    if (loginUsernameController.text.isEmpty || loginPasswordController.text.isEmpty) {
+      Get.snackbar('Login Gagal', 'Username dan password wajib diisi',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
     if (loginUsernameController.text == dummyUsername &&
         loginPasswordController.text == dummyPassword) {
-      setState(() {
-        showLogin = false;
-        _selectedIndex = 0;
-      });
+      Get.offAllNamed(Routes.HOME);
     } else {
       Get.snackbar('Login Gagal', 'Username atau password salah',
           backgroundColor: Colors.red, colorText: Colors.white);
@@ -75,12 +84,16 @@ class _AuthViewState extends State<AuthView> {
                 onSignUpTap: _goToSignup,
                 onLoginSuccess: _login,
               )
-            : Scaffold(
-                backgroundColor: Colors.transparent,
-                body: IndexedStack(
-                  index: _selectedIndex,
-                  children: _pages,
-                ),
+            : my_views.SignupView(
+                key: const ValueKey('signup'),
+                onLoginTap: _goToLogin,
+                usernameController: usernameController,
+                emailController: emailController,
+                passwordController: passwordController,
+                onSignupTap: () {
+                  // aksi signup sukses
+                  _goToLogin();
+                },
               ),
       ),
     );
