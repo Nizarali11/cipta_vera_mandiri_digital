@@ -1,5 +1,6 @@
 import 'package:cipta_vera_mandiri_digital/app/modules/home/bindings/home_binding.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/views/auth_view.dart';
+import 'package:cipta_vera_mandiri_digital/app/modules/pages/homepage.dart';
 import 'package:get/get.dart';
 
 import '../modules/home/bindings/login_binding.dart';
@@ -16,7 +17,7 @@ class AppPages {
     ),
     GetPage(
       name: Routes.HOME,
-      page: () => HomeView(),
+      page: () => HomePage(),
         binding: HomeBinding(),
     ),
   ];
