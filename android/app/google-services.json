@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "568264094179",
+    "project_id": "cipta-vera-mandiri-digital",
+    "storage_bucket": "cipta-vera-mandiri-digital.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:568264094179:android:3a17be497857aacddaf0d6",
+        "android_client_info": {
+          "package_name": "veramandiri.com.cipta_vera_mandiri_digital"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxyKYoZaAM10yIEjHxACYva9v-EpHrczw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
