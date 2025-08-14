@@ -214,7 +214,6 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
-
 // Helper for menu tiles with icon, text, trailing arrow, and rounded corners for first and last
 Widget _settingsTile({
   required IconData icon,
@@ -251,7 +250,6 @@ Widget _settingsTile({
     minLeadingWidth: 0,
   );
 }
-
 // Custom divider for menu groups
 Widget _divider() {
   return Container(
