@@ -1,10 +1,13 @@
 import 'dart:ui';
 import 'dart:convert';
 
+import 'package:cipta_vera_mandiri_digital/app/modules/home/controllers/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter/gestures.dart';
+import 'package:get/get.dart';
+import 'package:cipta_vera_mandiri_digital/app/modules/home/controllers/home_controller.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -14,6 +17,7 @@ class CalendarPage extends StatefulWidget {
 }
 
 class _CalendarPageState extends State<CalendarPage> {
+  final HomeController homeController = Get.find<HomeController>();
   Map<DateTime, List<Map<String, String>>> _events = {};
   Map<DateTime, List<String>> _holidays = {};
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -426,6 +430,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                     if (_events[_selectedDay]?.isEmpty ?? false) {
                                       _events.remove(_selectedDay);
                                     }
+                                    homeController.removeEvent(_selectedDay, event["title"] ?? "");
                                   });
                                 },
                               ),
@@ -575,6 +580,7 @@ class _CalendarPageState extends State<CalendarPage> {
                               } else {
                                 _events[_selectedDay] = [newEvent];
                               }
+                              homeController.addEvent(_selectedDay, eventController.text, timeController.text, roomController.text);
                             });
                             Navigator.of(context).pop();
                           }

@@ -401,55 +401,81 @@ class HomeView extends GetView<HomeController> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.lightBlue[50],
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  Obx(() {
+                    final events = controller.upcomingEvents;
+                    print('[HomeView] events: ${events.length}');
+                    for (final event in events) {
+                      print(' - ${event.title} (${event.date})');
+                    }
+                    if (events.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: Center(
+                          child: Text(
+                            'Tidak ada acara mendatang',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: events.map((event) {
+                        return Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.blue[700],
-                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.lightBlue[50],
+                            borderRadius: BorderRadius.circular(24),
                           ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Text(
-                                '24',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[700],
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${event.date.day}',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+                                    ),
+                                    Text(
+                                      _bulan(event.date.month),
+                                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              Text(
-                                'Juni',
-                                style: TextStyle(color: Colors.white, fontSize: 14),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      event.title,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${event.time}\n${event.location}',
+                                      style: const TextStyle(fontSize: 13, color: Colors.black54),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                'Rapat Koordinasi Proyek',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '09:00 - 11:00 WIB\nRuang Meeting 2',
-                                style: TextStyle(fontSize: 13, color: Colors.black54),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                        );
+                      }).toList(),
+                    );
+                  }),
                   // const SizedBox(height: 40),
                 ],
               ),
@@ -509,4 +535,27 @@ class _MenuIcon extends StatelessWidget {
       ],
     );
   }
+}
+
+
+String _bulan(int bulan) {
+  const bulanStr = [
+    '',
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+  if (bulan >= 1 && bulan <= 12) {
+    return bulanStr[bulan];
+  }
+  return '';
 }
