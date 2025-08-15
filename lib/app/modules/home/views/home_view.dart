@@ -4,6 +4,7 @@ import 'package:cipta_vera_mandiri_digital/app/modules/home/homeview/news_sectio
 import 'package:cipta_vera_mandiri_digital/app/modules/home/homeview/profile_card.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/homeview/upcoming_events_section.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 
 
@@ -19,6 +20,7 @@ class HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<HomeController>();
     return Scaffold(
       extendBody: true,
       backgroundColor: Colors.transparent,
@@ -50,7 +52,7 @@ class HomeView extends StatelessWidget {
                       Navigator.pushReplacementNamed(context, '/login');
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 0),
                   const ProfileCard(),
                   const SizedBox(height: 28),
                   MenuGrid(onMenuSelected: onMenuSelected),
@@ -58,7 +60,6 @@ class HomeView extends StatelessWidget {
                   const NewsSection(),
                   const SizedBox(height: 32),
                   UpcomingEventsSection(
-                    events: <Event>[], // Replace with actual event list when available
                     onMenuSelected: onMenuSelected,
                   ),
                 ],

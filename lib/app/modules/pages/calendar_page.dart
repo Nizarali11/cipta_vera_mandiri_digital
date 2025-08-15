@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter/gestures.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -41,6 +42,33 @@ class _CalendarPageState extends State<CalendarPage> {
     // Suppress Flutter's gesture arena debug output
     debugPrintGestureArenaDiagnostics = false;
     fetchHolidays();
+    loadEvents();
+  }
+
+  Future<void> saveEvents() async {
+    final prefs = await SharedPreferences.getInstance();
+    final eventsJson = _events.map((key, value) {
+      return MapEntry(key.toIso8601String(), value);
+    });
+    await prefs.setString('events', jsonEncode(eventsJson));
+  }
+
+  Future<void> loadEvents() async {
+    final prefs = await SharedPreferences.getInstance();
+    final eventsString = prefs.getString('events');
+    if (eventsString != null) {
+      final Map<String, dynamic> decoded = jsonDecode(eventsString);
+      final loadedEvents = decoded.map((key, value) {
+        final date = DateTime.parse(key);
+        final List<Map<String, String>> eventsList = List<Map<String, String>>.from(
+          (value as List).map((item) => Map<String, String>.from(item)),
+        );
+        return MapEntry(date, eventsList);
+      });
+      setState(() {
+        _events = loadedEvents;
+      });
+    }
   }
 
   Future<void> fetchHolidays() async {
@@ -222,6 +250,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                   }
                                   homeController.addEvent(_selectedDay, eventController.text, timeController.text, roomController.text);
                                 });
+                                saveEvents();
                                 Navigator.of(context).pop();
                               }
                             },
@@ -586,6 +615,7 @@ class _CalendarPageState extends State<CalendarPage> {
                                     }
                                     homeController.removeEvent(_selectedDay, event["title"] ?? "");
                                   });
+                                  saveEvents();
                                 },
                               ),
                             ],
