@@ -4,7 +4,6 @@ import 'package:cipta_vera_mandiri_digital/app/modules/home/homeview/news_sectio
 import 'package:cipta_vera_mandiri_digital/app/modules/home/homeview/profile_card.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/homeview/upcoming_events_section.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 
 
