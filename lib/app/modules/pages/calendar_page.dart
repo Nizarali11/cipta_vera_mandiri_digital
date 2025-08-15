@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'dart:convert';
-
 import 'package:cipta_vera_mandiri_digital/app/modules/home/controllers/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -68,6 +67,8 @@ class _CalendarPageState extends State<CalendarPage> {
       setState(() {
         _events = loadedEvents;
       });
+      // Also load to homeController.events so calendar and "acara mendatang" use same data
+      await homeController.loadEventsFromPrefs();
     }
   }
 
@@ -238,17 +239,23 @@ class _CalendarPageState extends State<CalendarPage> {
                             onPressed: () {
                               if (eventController.text.isNotEmpty && timeController.text.isNotEmpty) {
                                 setState(() {
+                                  final normalizedDay = _normalizeDate(_selectedDay);
                                   final newEvent = {
                                     "title": eventController.text,
                                     "time": timeController.text,
                                     "room": roomController.text,
                                   };
-                                  if (_events[_selectedDay] != null) {
-                                    _events[_selectedDay]!.add(newEvent);
+                                  if (_events[normalizedDay] != null) {
+                                    _events[normalizedDay]!.add(newEvent);
                                   } else {
-                                    _events[_selectedDay] = [newEvent];
+                                    _events[normalizedDay] = [newEvent];
                                   }
-                                  homeController.addEvent(_selectedDay, eventController.text, timeController.text, roomController.text);
+                                  homeController.addEvent(
+                                    normalizedDay,
+                                    eventController.text,
+                                    timeController.text,
+                                    roomController.text,
+                                  );
                                 });
                                 saveEvents();
                                 Navigator.of(context).pop();
@@ -609,11 +616,12 @@ class _CalendarPageState extends State<CalendarPage> {
                                 icon: const Icon(Icons.delete),
                                 onPressed: () {
                                   setState(() {
-                                    _events[_selectedDay]?.remove(event);
-                                    if (_events[_selectedDay]?.isEmpty ?? false) {
-                                      _events.remove(_selectedDay);
+                                    final normalizedDay = _normalizeDate(_selectedDay);
+                                    _events[normalizedDay]?.remove(event);
+                                    if (_events[normalizedDay]?.isEmpty ?? false) {
+                                      _events.remove(normalizedDay);
                                     }
-                                    homeController.removeEvent(_selectedDay, event["title"] ?? "");
+                                    homeController.removeEvent(normalizedDay, event["title"] ?? "");
                                   });
                                   saveEvents();
                                 },

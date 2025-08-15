@@ -14,7 +14,7 @@ class NewsSection extends StatelessWidget {
           children: [
             const Text(
               'Berita & Artikel Terbaru',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
             TextButton(
               onPressed: () async {

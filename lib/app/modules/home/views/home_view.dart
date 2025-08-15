@@ -56,9 +56,9 @@ class HomeView extends StatelessWidget {
                   const ProfileCard(),
                   const SizedBox(height: 28),
                   MenuGrid(onMenuSelected: onMenuSelected),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
                   const NewsSection(),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
                   UpcomingEventsSection(
                     onMenuSelected: onMenuSelected,
                   ),

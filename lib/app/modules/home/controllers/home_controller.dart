@@ -16,9 +16,12 @@ class Event {
   });
 }
 
+Map<DateTime, List<Event>> calendarEvents = {};
+
 class HomeController extends GetxController {
   var currentIndex = 0.obs;
   var events = <Event>[].obs;
+  var isLoading = true.obs;
 
   @override
   void onInit() {
@@ -38,38 +41,64 @@ class HomeController extends GetxController {
   }
 
   Future<void> loadEventsFromPrefs() async {
+    isLoading.value = true;
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
     final eventsString = prefs.getString('events');
     if (eventsString != null) {
       final decoded = jsonDecode(eventsString);
       if (decoded is List) {
         events.value = decoded.map((e) => Event(
-              date: DateTime.parse(e['date']),
+              date: DateTime.parse(e['date']).toLocal(),
               title: e['title'],
               time: e['time'],
               location: e['location'],
             )).toList();
         print('Loaded events: ${events.length}');
+      } else if (decoded is Map) {
+        List<Event> loadedEvents = [];
+        decoded.forEach((key, value) {
+          DateTime date = DateTime.parse(key).toLocal();
+          if (value is List) {
+            for (var item in value) {
+              String location = item['location'] ?? item['room'] ?? '';
+              loadedEvents.add(Event(
+                date: DateTime(date.year, date.month, date.day),
+                title: item['title'],
+                time: item['time'],
+                location: location,
+              ));
+            }
+          }
+        });
+        events.value = loadedEvents;
+        print('Loaded events: ${events.length}');
       } else {
-        // Jika format data salah (bukan List), hapus dan kosongkan events
-        print('Invalid events data format. Clearing stored events.');
-        await prefs.remove('events');
-        events.clear();
+        print('Invalid events data format. Keeping existing stored events.');
+        // Jangan hapus data, cukup skip load agar data lama tetap ada
       }
     }
+    isLoading.value = false;
   }
 
   void addEvent(DateTime date, String title, String time, String location) async {
     final normalized = DateTime(date.year, date.month, date.day);
-    events.add(Event(
+    final newEvent = Event(
       date: normalized,
       title: title,
       time: time,
       location: location,
-    ));
+    );
+    events.add(newEvent);
+    if (calendarEvents.containsKey(normalized)) {
+      calendarEvents[normalized]!.add(newEvent);
+    } else {
+      calendarEvents[normalized] = [newEvent];
+    }
     print('Added event: $title on $normalized at $time, location: $location');
     print('Total events: ${events.length}');
     await saveEventsToPrefs();
+    update();
   }
 
   List<Event> get upcomingEvents {
@@ -78,7 +107,6 @@ class HomeController extends GetxController {
         .where((event) => !event.date.isBefore(DateTime(now.year, now.month, now.day)))
         .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
-    print('Upcoming events count: ${filteredEvents.length}');
     return filteredEvents;
   }
 

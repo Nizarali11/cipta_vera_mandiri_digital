@@ -35,8 +35,8 @@ class UpcomingEventsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Obx(() {
-          final data = Get.find<HomeController>().upcomingEvents;
-          print('UpcomingEventsSection: loaded ${data.length} events');
+          final data = controller.upcomingEvents;
+          print("Upcoming events count: ${data.length}");
           if (data.isEmpty) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
