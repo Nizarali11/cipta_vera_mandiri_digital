@@ -5,7 +5,9 @@ import 'package:get/get.dart';
  // sesuaikan path ini dengan lokasi CalendarPage
 
 class MenuGrid extends StatelessWidget {
-  const MenuGrid({super.key});
+  final void Function(int) onMenuSelected;
+
+  const MenuGrid({super.key, required this.onMenuSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +45,7 @@ class MenuGrid extends StatelessWidget {
         // Kalender
         GestureDetector(
           onTap: () {
-            Get.to(() => const CalendarPage());
+            onMenuSelected(2);
           },
           child: _MenuIcon(
             icon: Icons.calendar_today,

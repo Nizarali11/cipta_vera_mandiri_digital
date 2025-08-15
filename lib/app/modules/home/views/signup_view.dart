@@ -43,7 +43,7 @@ class _SignupViewState extends State<SignupView> {
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
             child: Column(
               children: [
-                const SizedBox(height:80),
+                const SizedBox(height:76),
                 Image.asset(
                   'lib/app/assets/images/cvm.png',
                   height: 120,
@@ -62,16 +62,16 @@ class _SignupViewState extends State<SignupView> {
                 const SizedBox(height: 10),
                 // Username
                 _buildTextField("Username", Icons.person, widget.usernameController),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 // Email
                 _buildTextField("Email", Icons.email, widget.emailController),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 // Password
                 _buildPasswordField(),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 // Confirm Password
                 _buildConfirmPasswordField(),
-                const SizedBox(height: 120),
+                const SizedBox(height: 61),
                 // Tombol Sign Up
                 ClipRRect(
                   borderRadius: BorderRadius.circular(30),

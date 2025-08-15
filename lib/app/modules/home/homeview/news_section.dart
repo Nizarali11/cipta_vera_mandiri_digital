@@ -27,7 +27,7 @@ class NewsSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         FutureBuilder<List<Map<String, String>>>(
           future: NewsService.fetchBeritaTerbaru(),
           builder: (context, snapshot) {

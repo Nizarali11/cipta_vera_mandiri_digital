@@ -1,108 +1,107 @@
 import 'package:cipta_vera_mandiri_digital/app/modules/home/controllers/home_controller.dart';
-import 'package:cipta_vera_mandiri_digital/app/modules/pages/calendar_page.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
+
 
 class UpcomingEventsSection extends StatelessWidget {
-  final HomeController controller;
-  const UpcomingEventsSection({super.key, required this.controller});
+  final List<Event> events;
+  final void Function(int) onMenuSelected;
+  const UpcomingEventsSection({
+    super.key,
+    required this.events,
+    required this.onMenuSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final events = controller.upcomingEvents;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Acara Mendatang',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              TextButton(
-                onPressed: () {
-                  Get.to(() => const CalendarPage());
-                },
-                child: const Text('Lihat Kalender'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (events.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Center(
-                child: Text(
-                  'Tidak ada acara mendatang',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontStyle: FontStyle.italic,
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Acara Mendatang',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            TextButton(
+              onPressed: () {
+                onMenuSelected(2);
+              },
+              child: const Text('Lihat Kalender'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (events.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Center(
+              child: Text(
+                'Tidak ada acara mendatang',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-            )
-          else
-            Column(
-              children: events.map((event) {
-                return Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.lightBlue[50],
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.blue[700],
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${event.date.day}',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
-                            ),
-                            Text(
-                              _bulan(event.date.month),
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              event.title,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${event.time}\n${event.location}',
-                              style: const TextStyle(fontSize: 13, color: Colors.black54),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
             ),
-        ],
-      );
-    });
+          )
+        else
+          Column(
+            children: events.map((event) {
+              return Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.lightBlue[50],
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[700],
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${event.date.day}',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+                          ),
+                          Text(
+                            _bulan(event.date.month),
+                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            event.title,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${event.time}\n${event.location}',
+                            style: const TextStyle(fontSize: 13, color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+      ],
+    );
   }
 }
 String _bulan(int bulan) {

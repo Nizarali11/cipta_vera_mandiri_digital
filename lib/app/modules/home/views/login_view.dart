@@ -44,7 +44,7 @@ class _LoginViewState extends State<LoginView> {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(height: 132),
+                    const SizedBox(height: 80),
                 
                     Container(
                       decoration: BoxDecoration(
@@ -201,8 +201,8 @@ class _LoginViewState extends State<LoginView> {
                       ],
                     ),
 
-                    const SizedBox(height: 21),
-                    const SizedBox(height: 29),
+                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
                   ],
                 ),
                 Column(
@@ -266,7 +266,7 @@ class _LoginViewState extends State<LoginView> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 50),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ],

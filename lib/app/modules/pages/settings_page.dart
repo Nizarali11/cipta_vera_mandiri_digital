@@ -42,7 +42,7 @@ class SettingsPage extends StatelessWidget {
                         color: Colors.black, // Good contrast on light bg
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 18),
                     // Profile Section
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -90,7 +90,7 @@ class SettingsPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 15),
                     // First menu group
                     Container(
                       decoration: BoxDecoration(
@@ -121,7 +121,7 @@ class SettingsPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 15),
                     // Second menu group
                     Container(
                       decoration: BoxDecoration(
@@ -166,7 +166,7 @@ class SettingsPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 0),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 15),
                     // Third menu group
                     Container(
                       decoration: BoxDecoration(

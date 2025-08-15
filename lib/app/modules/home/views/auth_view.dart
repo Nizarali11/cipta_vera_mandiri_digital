@@ -23,13 +23,7 @@ class _AuthViewState extends State<AuthView> {
   int _selectedIndex = 0;
 
   // ignore: unused_field
-  final List<Widget> _pages = const [
-    HomeView(),
-    ChatPage(),
-    CalendarPage(),
-    ProfilePage(),
-    SettingsPage(),
-  ];
+  late final List<Widget> _pages;
 
   // Controller untuk login
   final loginUsernameController = TextEditingController();
@@ -62,6 +56,29 @@ class _AuthViewState extends State<AuthView> {
       Get.snackbar('Login Gagal', 'Username atau password salah',
           backgroundColor: Colors.red, colorText: Colors.white);
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomeView(
+        onMenuSelected: (int index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        onLogout: () {
+          setState(() {
+            showLogin = true;
+          });
+        },
+      ),
+      const ChatPage(),
+      const CalendarPage(),
+      const ProfilePage(),
+      const SettingsPage(),
+    ];
   }
 
   @override

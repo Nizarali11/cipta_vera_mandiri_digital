@@ -8,8 +8,15 @@ import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 
 
-class HomeView extends GetView<HomeController> {
-  const HomeView({super.key});
+class HomeView extends StatelessWidget {
+  final void Function(int) onMenuSelected;
+  final void Function() onLogout;
+
+  const HomeView({
+    super.key,
+    required this.onMenuSelected,
+    required this.onLogout,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,19 +39,29 @@ class HomeView extends GetView<HomeController> {
         child: SafeArea(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const HomeHeader(),
+                  HomeHeader(
+                    onLogout: () {
+                      // Call the passed in onLogout to allow parent handling
+                      onLogout();
+                      // Navigate to the login page after logout
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                  ),
                   const SizedBox(height: 24),
                   const ProfileCard(),
                   const SizedBox(height: 28),
-                  const MenuGrid(),
+                  MenuGrid(onMenuSelected: onMenuSelected),
                   const SizedBox(height: 32),
                   const NewsSection(),
                   const SizedBox(height: 32),
-                  UpcomingEventsSection(controller: controller),
+                  UpcomingEventsSection(
+                    events: <Event>[], // Replace with actual event list when available
+                    onMenuSelected: onMenuSelected,
+                  ),
                 ],
               ),
             ),

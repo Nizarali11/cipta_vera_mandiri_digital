@@ -18,13 +18,30 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomeView(),
-    ChatPage(),
-    CalendarPage(),
-    ProfilePage(),
-    SettingsPage(),
-  ];
+  final List<Widget> _pages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _pages.addAll([
+      HomeView(
+        onMenuSelected: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+        onLogout: () {
+          setState(() {
+            currentIndex = 0;
+          });
+        },
+      ),
+      const ChatPage(),
+      const CalendarPage(),
+      const ProfilePage(),
+      const SettingsPage(),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {

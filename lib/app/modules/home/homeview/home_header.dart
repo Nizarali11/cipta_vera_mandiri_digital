@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({super.key});
+  final VoidCallback onLogout;
+  const HomeHeader({super.key, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -67,9 +68,9 @@ class HomeHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 0),
                 IconButton(
-                  icon: Icon(Icons.help_outline,
+                  icon: Icon(Icons.logout,
                       color: Colors.blue[900], size: 26),
-                  onPressed: () {},
+                  onPressed: onLogout,
                 ),
               ],
             ),

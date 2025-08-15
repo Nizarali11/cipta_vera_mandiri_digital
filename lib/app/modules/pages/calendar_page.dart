@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter/gestures.dart';
 import 'package:get/get.dart';
-import 'package:cipta_vera_mandiri_digital/app/modules/home/controllers/home_controller.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -85,6 +84,161 @@ class _CalendarPageState extends State<CalendarPage> {
           style: TextStyle(color: Colors.black),
         ),
         iconTheme: const IconThemeData(color: Colors.black),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              final TextEditingController eventController = TextEditingController();
+              final TextEditingController roomController = TextEditingController();
+              final TextEditingController timeController = TextEditingController();
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.0),
+                      child: AlertDialog(
+                        backgroundColor: Colors.transparent,
+                        elevation: 0,
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text(
+                          'Tambah Acara',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        content: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    TextField(
+                                      controller: eventController,
+                                      decoration: InputDecoration(
+                                        hintText: 'Tambahkan Acara',
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.4),
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: timeController,
+                                      decoration: InputDecoration(
+                                        hintText: 'Waktu Acara',
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.4),
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: roomController,
+                                      decoration: InputDecoration(
+                                        hintText: 'Ruangan di Pakai',
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.4),
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text(
+                              'Batal',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              if (eventController.text.isNotEmpty && timeController.text.isNotEmpty) {
+                                setState(() {
+                                  final newEvent = {
+                                    "title": eventController.text,
+                                    "time": timeController.text,
+                                    "room": roomController.text,
+                                  };
+                                  if (_events[_selectedDay] != null) {
+                                    _events[_selectedDay]!.add(newEvent);
+                                  } else {
+                                    _events[_selectedDay] = [newEvent];
+                                  }
+                                  homeController.addEvent(_selectedDay, eventController.text, timeController.text, roomController.text);
+                                });
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            child: const Text(
+                              'Tambah',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -445,159 +599,6 @@ class _CalendarPageState extends State<CalendarPage> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final TextEditingController eventController = TextEditingController();
-          final TextEditingController roomController = TextEditingController();
-          final TextEditingController timeController = TextEditingController();
-          showDialog(
-            context: context,
-            builder: (context) {
-              return BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Container(
-                  color: Colors.black.withOpacity(0.0),
-                  child: AlertDialog(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      'Tambah Acara',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    content: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                TextField(
-                                  controller: eventController,
-                                  decoration: InputDecoration(
-                                    hintText: 'Tambahkan Acara',
-                                    filled: true,
-                                    fillColor: Colors.white.withOpacity(0.4),
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: timeController,
-                                  decoration: InputDecoration(
-                                    hintText: 'Waktu Acara',
-                                    filled: true,
-                                    fillColor: Colors.white.withOpacity(0.4),
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: roomController,
-                                  decoration: InputDecoration(
-                                    hintText: 'Ruangan di Pakai',
-                                    filled: true,
-                                    fillColor: Colors.white.withOpacity(0.4),
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      borderSide: BorderSide(color: Colors.blueAccent.withOpacity(0.5)),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text(
-                          'Batal',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          if (eventController.text.isNotEmpty && timeController.text.isNotEmpty) {
-                            setState(() {
-                              final newEvent = {
-                                "title": eventController.text,
-                                "time": timeController.text,
-                                "room": roomController.text,
-                              };
-                              if (_events[_selectedDay] != null) {
-                                _events[_selectedDay]!.add(newEvent);
-                              } else {
-                                _events[_selectedDay] = [newEvent];
-                              }
-                              homeController.addEvent(_selectedDay, eventController.text, timeController.text, roomController.text);
-                            });
-                            Navigator.of(context).pop();
-                          }
-                        },
-                        child: const Text(
-                          'Tambah',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
