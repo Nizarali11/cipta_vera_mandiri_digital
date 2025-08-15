@@ -9,8 +9,8 @@ void main() {
    runApp(
     GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: Routes.LOGIN,   // Mulai dari halaman login
-      getPages: AppPages.routes,    // Daftar route yang sudah kamu definisikan
+      initialRoute: Routes.LOGIN, 
+      getPages: AppPages.routes,    
     ),
   );
 }

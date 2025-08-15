@@ -7,6 +7,7 @@ class SignupView extends StatefulWidget {
   final TextEditingController usernameController;
   final TextEditingController emailController;
   final TextEditingController passwordController;
+  final TextEditingController confirmPasswordController;
   final VoidCallback onSignupTap;
   const SignupView({
     super.key,
@@ -14,6 +15,7 @@ class SignupView extends StatefulWidget {
     required this.usernameController,
     required this.emailController,
     required this.passwordController,
+    required this.confirmPasswordController,
     required this.onSignupTap,
   });
 
@@ -41,7 +43,7 @@ class _SignupViewState extends State<SignupView> {
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
             child: Column(
               children: [
-                const SizedBox(height:110),
+                const SizedBox(height:80),
                 Image.asset(
                   'lib/app/assets/images/cvm.png',
                   height: 120,
@@ -66,6 +68,9 @@ class _SignupViewState extends State<SignupView> {
                 const SizedBox(height: 16),
                 // Password
                 _buildPasswordField(),
+                const SizedBox(height: 16),
+                // Confirm Password
+                _buildConfirmPasswordField(),
                 const SizedBox(height: 120),
                 // Tombol Sign Up
                 ClipRRect(
@@ -208,6 +213,35 @@ class _SignupViewState extends State<SignupView> {
         filled: true,
         fillColor: Colors.white.withOpacity(0.2),
         hintText: "Password",
+        hintStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: const Icon(Icons.lock, color: Colors.white),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+            color: Colors.white,
+          ),
+          onPressed: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+  Widget _buildConfirmPasswordField() {
+    return TextField(
+      controller: widget.confirmPasswordController,
+      obscureText: _obscurePassword,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.2),
+        hintText: "Confirm Password",
         hintStyle: const TextStyle(color: Colors.white70),
         prefixIcon: const Icon(Icons.lock, color: Colors.white),
         suffixIcon: IconButton(

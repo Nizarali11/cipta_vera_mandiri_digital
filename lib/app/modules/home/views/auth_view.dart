@@ -39,6 +39,7 @@ class _AuthViewState extends State<AuthView> {
   final usernameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
   void _goToSignup() => setState(() => showLogin = false);
 
@@ -90,6 +91,7 @@ class _AuthViewState extends State<AuthView> {
                 usernameController: usernameController,
                 emailController: emailController,
                 passwordController: passwordController,
+                confirmPasswordController: confirmPasswordController,
                 onSignupTap: () {
                   // aksi signup sukses
                   _goToLogin();
