@@ -303,7 +303,7 @@ class _CalendarPageState extends State<CalendarPage> {
               mainAxisSize: MainAxisSize.max,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                 padding: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: BackdropFilter(
