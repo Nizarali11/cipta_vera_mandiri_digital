@@ -45,11 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSBonjourServices</key>
-<array>
-    <string>_myservice._tcp</string>
-</array>
-<key>NSLocalNetworkUsageDescription</key>
-<string>Aplikasi membutuhkan akses jaringan lokal untuk berfungsi dengan benar.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Aplikasi membutuhkan akses jaringan lokal untuk berfungsi dengan benar.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Aplikasi membutuhkan akses kamera untuk mengambil foto profil.</string>
 </dict>
 </plist>

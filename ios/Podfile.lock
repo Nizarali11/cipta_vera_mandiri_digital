@@ -53,10 +53,18 @@ PODS:
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
   - GTMSessionFetcher/Core (5.0.0)
+  - image_cropper (0.0.4):
+    - Flutter
+    - TOCropViewController (~> 2.7.4)
+  - image_picker_ios (0.0.1):
+    - Flutter
+  - permission_handler_apple (9.3.0):
+    - Flutter
   - RecaptchaInterop (101.0.0)
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - TOCropViewController (2.7.4)
   - url_launcher_ios (0.0.1):
     - Flutter
 
@@ -64,6 +72,9 @@ DEPENDENCIES:
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - Flutter (from `Flutter`)
+  - image_cropper (from `.symlinks/plugins/image_cropper/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
@@ -79,6 +90,7 @@ SPEC REPOS:
     - GoogleUtilities
     - GTMSessionFetcher
     - RecaptchaInterop
+    - TOCropViewController
 
 EXTERNAL SOURCES:
   firebase_auth:
@@ -87,6 +99,12 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/firebase_core/ios"
   Flutter:
     :path: Flutter
+  image_cropper:
+    :path: ".symlinks/plugins/image_cropper/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   url_launcher_ios:
@@ -94,8 +112,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Firebase: 800d487043c0557d9faed71477a38d9aafb08a41
-  firebase_auth: 4734e8223034e214039a9a805ff2cfb323223e34
-  firebase_core: 633e1851ffe1b9ab875f6467a4f574c79cef02e4
+  firebase_auth: 4e5ee3c9daf2aa6feec1f3596e2f12daf4b30c09
+  firebase_core: c70f903d70ec229c08c2f49aba5a8c1338546d40
   FirebaseAppCheckInterop: c848d06a04030c9858ef0ae555b82035dbe470d0
   FirebaseAuth: 654e4de84787c45d7265599a651038e854ccb439
   FirebaseAuthInterop: 002da671896af5e8879ae117dc604ed240b86e80
@@ -105,9 +123,13 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   GTMSessionFetcher: 02d6e866e90bc236f48a703a041dfe43e6221a29
+  image_cropper: e0bb0042e4404ff2ef134e5cf0492cbd892156cd
+  image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
-  url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
+  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
+  TOCropViewController: 80b8985ad794298fb69d3341de183f33d1853654
+  url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
 
 PODFILE CHECKSUM: f7fb5bf0165a6b993d1515d2f060caca0d592862
 
