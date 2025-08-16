@@ -55,6 +55,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           children: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
+                              style: TextButton.styleFrom(foregroundColor: const Color.fromARGB(255, 13, 114, 198)),
                               child: const Text("Batal"),
                             ),
                             Expanded(
@@ -70,6 +71,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context, controller.text),
+                             style: TextButton.styleFrom(foregroundColor: const Color.fromARGB(255, 13, 114, 198)),
                               child: const Text("Simpan"),
                             ),
                           ],
@@ -277,13 +279,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           )
                         : null,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       TextButton.icon(
                         onPressed: _showPhotoOptions,
-                       
+                       style: TextButton.styleFrom(foregroundColor: const Color.fromARGB(255, 13, 114, 198)),
                         label: const Text("Edit"),
                       ),
                     ],
