@@ -1,8 +1,44 @@
 import 'dart:ui';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
-class ProfileCard extends StatelessWidget {
+class ProfileCard extends StatefulWidget {
   const ProfileCard({super.key});
+
+  @override
+  State<ProfileCard> createState() => _ProfileCardState();
+}
+
+class _ProfileCardState extends State<ProfileCard> {
+  File? _fotoProfil;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfilePhoto();
+  }
+
+  Future<void> _loadProfilePhoto() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPath = prefs.getString('fotoProfil');
+    final dir = await getApplicationDocumentsDirectory();
+    final fixedPath = '${dir.path}/profile.jpg';
+
+    File? resolved;
+    if (savedPath != null && File(savedPath).existsSync()) {
+      resolved = File(savedPath);
+    } else if (File(fixedPath).existsSync()) {
+      resolved = File(fixedPath);
+    }
+
+    if (mounted) {
+      setState(() {
+        _fotoProfil = resolved;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,8 +96,16 @@ class ProfileCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.grey,
+                      image: _fotoProfil != null
+                          ? DecorationImage(
+                              image: FileImage(_fotoProfil!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                     ),
-                    child: Icon(Icons.person, color: Colors.white54, size: 28),
+                    child: _fotoProfil == null
+                        ? const Icon(Icons.person, color: Colors.white54, size: 28)
+                        : null,
                   ),
                 ],
               ),

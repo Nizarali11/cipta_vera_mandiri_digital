@@ -2,6 +2,48 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+class BottomNav {
+  static const int home = 0;
+  static const int chat = 1;
+  static const int calendar = 2;
+  static const int profile = 3;
+  static const int settings = 4;
+
+  static IconData iconFor(int index) {
+    switch (index) {
+      case home:
+        return Icons.home;
+      case chat:
+        return Icons.chat;
+      case calendar:
+        return Icons.calendar_today;
+      case profile:
+        return Icons.person;
+      case settings:
+        return Icons.settings;
+      default:
+        return Icons.home;
+    }
+  }
+
+  static String labelFor(int index) {
+    switch (index) {
+      case home:
+        return 'Home';
+      case chat:
+        return 'Chat';
+      case calendar:
+        return 'Calendar';
+      case profile:
+        return 'Profile';
+      case settings:
+        return 'Pengaturan';
+      default:
+        return 'Home';
+    }
+  }
+}
+
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int>? onTap;
@@ -35,33 +77,8 @@ class CustomBottomNavBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: List.generate(5, (index) {
-              IconData icon;
-              String label;
-              switch (index) {
-                case 0:
-                  icon = Icons.home;
-                  label = 'Home';
-                  break;
-                case 1:
-                  icon = Icons.chat;
-                  label = 'Chat';
-                  break;
-                case 2:
-                  icon = Icons.calendar_today;
-                  label = 'Calendar';
-                  break;
-                case 3:
-                  icon = Icons.person;
-                  label = 'Profile';
-                  break;
-                case 4:
-                  icon = Icons.settings;
-                  label = 'Pengaturan';
-                  break;
-                default:
-                  icon = Icons.home;
-                  label = 'Home';
-              }
+              final icon = BottomNav.iconFor(index);
+              final label = BottomNav.labelFor(index);
               final selected = index == currentIndex;
               final color = selected ? const Color.fromARGB(255, 51, 144, 215) : const Color.fromARGB(255, 108, 108, 108);
 

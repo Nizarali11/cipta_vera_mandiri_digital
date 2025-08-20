@@ -1,7 +1,77 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:cipta_vera_mandiri_digital/app/modules/widgets/floating_nav_bar.dart';
+import 'package:cipta_vera_mandiri_digital/app/modules/pages/profile_page.dart' as profile;
 
-class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+class SettingsPage extends StatefulWidget {
+  final void Function(int)? onMenuSelected;
+  final int profileTabIndex;
+
+  const SettingsPage({
+    super.key,
+    this.onMenuSelected,
+    this.profileTabIndex = 3, // sesuaikan index profil jika berbeda
+  });
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  String _nama = 'Nizar ali';
+  String _tentang = 'Sibuk';
+  File? _fotoProfil;
+
+  Future<void> _loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedName = prefs.getString('nama');
+    final savedAbout = prefs.getString('tentang');
+    final savedPath = prefs.getString('fotoProfil');
+
+    final dir = await getApplicationDocumentsDirectory();
+    final fixedPath = '${dir.path}/profile.jpg';
+
+    File? resolved;
+    if (savedPath != null && File(savedPath).existsSync()) {
+      resolved = File(savedPath);
+    } else if (File(fixedPath).existsSync()) {
+      resolved = File(fixedPath);
+      await prefs.setString('fotoProfil', fixedPath); // self-heal
+    } else {
+      resolved = null;
+      if (savedPath != null) {
+        await prefs.remove('fotoProfil');
+      }
+    }
+
+    setState(() {
+      _nama = savedName ?? _nama;
+      _tentang = savedAbout ?? _tentang;
+      _fotoProfil = resolved;
+    });
+  }
+
+  void _onProfileChanged() async {
+    if (!mounted) return;
+    await _loadProfile();
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+    profile.profileChanged.addListener(_onProfileChanged);
+  }
+
+  @override
+  void dispose() {
+    profile.profileChanged.removeListener(_onProfileChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,28 +129,29 @@ class SettingsPage extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const CircleAvatar(
+                          CircleAvatar(
                             radius: 28,
                             backgroundColor: Colors.grey,
-                            child: Icon(Icons.person, color: Colors.white),
+                            backgroundImage: _fotoProfil != null ? FileImage(_fotoProfil!) : null,
+                            child: _fotoProfil == null ? const Icon(Icons.person, color: Colors.white) : null,
                           ),
                           const SizedBox(width: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
-                                'Nizar ali',
-                                style: TextStyle(
+                                _nama,
+                                style: const TextStyle(
                                   color: Color.fromARGB(255, 51, 51, 51),
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                'Sibuk',
-                                style: TextStyle(
-                                   color: Color.fromARGB(255, 51, 51, 51),
+                                _tentang,
+                                style: const TextStyle(
+                                  color: Color.fromARGB(255, 51, 51, 51),
                                 ),
                               ),
                             ],
@@ -140,7 +211,25 @@ class SettingsPage extends StatelessWidget {
                           _settingsTile(
                             icon: Icons.person_outline,
                             text: 'Profil',
-                            onTap: () {},
+                            onTap: () async {
+                              // Route via index ke tab Profil jika callback tersedia
+                              if (widget.onMenuSelected != null) {
+                                widget.onMenuSelected!(BottomNav.profile);
+                                if (Navigator.of(context).canPop()) {
+                                  Navigator.of(context).pop();
+                                }
+                                return;
+                              }
+                              // Fallback lama: tetap dorong halaman Profile kalau belum ada callback
+                              await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(builder: (_) => const profile.ProfilePage()),
+                              );
+                              if (!mounted) return;
+                              await _loadProfile();
+                              if (!mounted) return;
+                              setState(() {});
+                            },
                             isFirst: true,
                           ),
                           _divider(),
@@ -214,7 +303,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
-// Helper for menu tiles with icon, text, trailing arrow, and rounded corners for first and last
+
 Widget _settingsTile({
   required IconData icon,
   required String text,
@@ -250,7 +339,7 @@ Widget _settingsTile({
     minLeadingWidth: 0,
   );
 }
-// Custom divider for menu groups
+
 Widget _divider() {
   return Container(
     margin: const EdgeInsets.symmetric(horizontal: 16),
