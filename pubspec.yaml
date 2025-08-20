@@ -47,6 +47,10 @@ dependencies:
   permission_handler: ^11.3.0
   image_cropper: ^9.1.0
   path_provider: ^2.1.4
+  geolocator: ^10.1.0
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.1
+  google_maps_flutter: ^2.5.0
 
 dev_dependencies:
   flutter_test:

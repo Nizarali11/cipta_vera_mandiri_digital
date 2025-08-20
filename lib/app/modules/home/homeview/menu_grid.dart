@@ -1,4 +1,7 @@
 import 'dart:ui';
+import 'package:cipta_vera_mandiri_digital/absensi/absen.dart';
+import 'package:cipta_vera_mandiri_digital/absensi/cuti.dart';
+import 'package:cipta_vera_mandiri_digital/absensi/izin.dart';
 import 'package:flutter/material.dart';
  // sesuaikan path ini dengan lokasi CalendarPage
 
@@ -17,22 +20,46 @@ class MenuGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       children: [
         // Absen Kehadiran
-        _MenuIcon(
-          icon: Icons.fingerprint,
-          label: 'Absen Kehadiran',
-          color: Colors.green[400]!,
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AttendancePage()),
+            );
+          },
+          child: _MenuIcon(
+            icon: Icons.fingerprint,
+            label: 'Absen Kehadiran',
+            color: Colors.green[400]!,
+          ),
         ),
         // Cuti
-        _MenuIcon(
-          icon: Icons.beach_access,
-          label: 'Cuti',
-          color: Colors.orange[400]!,
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LeavePage()),
+            );
+          },
+          child: _MenuIcon(
+            icon: Icons.beach_access,
+            label: 'Cuti',
+            color: Colors.orange[400]!,
+          ),
         ),
         // Izin
-        _MenuIcon(
-          icon: Icons.assignment_turned_in,
-          label: 'Izin',
-          color: Colors.purple[400]!,
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PermissionPage()),
+            );
+          },
+          child: _MenuIcon(
+            icon: Icons.assignment_turned_in,
+            label: 'Izin',
+            color: Colors.purple[400]!,
+          ),
         ),
         // Pemberkasan
         _MenuIcon(
