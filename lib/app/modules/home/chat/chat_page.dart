@@ -2,15 +2,24 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChatPage extends StatefulWidget {
-  ChatPage({super.key});
+  final String? chatId; // null = fallback dummy mode
+  final String? peerName;
+  final String? peerAvatarUrl;
+  ChatPage({super.key, this.chatId, this.peerName, this.peerAvatarUrl});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
 }
 
 class _ChatPageState extends State<ChatPage> {
+  final _auth = FirebaseAuth.instance;
+  final _db = FirebaseFirestore.instance;
+  String get _myUid => _auth.currentUser?.uid ?? '';
+
   final TextEditingController _textCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
 
@@ -26,13 +35,48 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
-  void _send() {
+  Future<void> _send() async {
     final txt = _textCtrl.text.trim();
     if (txt.isEmpty) return;
-    setState(() {
-      _messages.add(_Msg(text: txt, isMe: true, time: TimeOfDay.now()));
-      _textCtrl.clear();
-    });
+
+    _textCtrl.clear();
+
+    if (widget.chatId == null) {
+      // Fallback: local dummy mode
+      setState(() {
+        _messages.add(_Msg(text: txt, isMe: true, time: TimeOfDay.now()));
+      });
+    } else {
+      try {
+        final chatId = widget.chatId!;
+        final msgRef = _db.collection('chats').doc(chatId).collection('messages').doc();
+        final chatRef = _db.collection('chats').doc(chatId);
+        final batch = _db.batch();
+
+        batch.set(msgRef, {
+          'text': txt,
+          'senderId': _myUid,
+          'type': 'text',
+          'createdAt': FieldValue.serverTimestamp(),
+          'readBy': _myUid.isNotEmpty ? [_myUid] : [],
+        });
+
+        batch.set(chatRef, {
+          'lastMessage': txt,
+          'lastMessageAt': FieldValue.serverTimestamp(),
+          'lastSenderId': _myUid,
+        }, SetOptions(merge: true));
+
+        await batch.commit();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal kirim: $e')),
+          );
+        }
+      }
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollCtrl.hasClients) {
         _scrollCtrl.animateTo(
@@ -42,7 +86,6 @@ class _ChatPageState extends State<ChatPage> {
         );
       }
     });
-    // Tunda unfocus agar tidak flicker saat layout berubah
     Future.delayed(const Duration(milliseconds: 240), () {
       if (!mounted) return;
       FocusScope.of(context).unfocus();
@@ -71,19 +114,22 @@ class _ChatPageState extends State<ChatPage> {
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white.withOpacity(0.7), width: 1),
               ),
-              child: const CircleAvatar(
+              child: CircleAvatar(
                 radius: 18,
-                backgroundImage: AssetImage('lib/app/assets/images/cvm.png'),
+                backgroundImage: widget.peerAvatarUrl != null
+                    ? NetworkImage(widget.peerAvatarUrl!)
+                    : const AssetImage('lib/app/assets/images/cvm.png') as ImageProvider,
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('CVM Support', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white)),
-                  SizedBox(height: 2),
-                  Text('online', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                  Text(widget.peerName ?? 'CVM Support',
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white)),
+                  const SizedBox(height: 2),
+                  const Text('online', style: TextStyle(fontSize: 12, color: Colors.white70)),
                 ],
               ),
             ),
@@ -127,23 +173,70 @@ class _ChatPageState extends State<ChatPage> {
             child: Column(
               children: [
                 Expanded(
-                  child: ListView.builder(
-                    controller: _scrollCtrl,
-                    physics: const BouncingScrollPhysics(),
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final m = _messages[index];
-                      final prevIsMe = index > 0 ? _messages[index - 1].isMe : null;
-                      final nextIsMe = index < _messages.length - 1 ? _messages[index + 1].isMe : null;
-                      return _Bubble(
-                        msg: m,
-                        startGroup: prevIsMe == null || prevIsMe != m.isMe,
-                        endGroup: nextIsMe == null || nextIsMe != m.isMe,
-                      );
-                    },
-                  ),
+                  child: widget.chatId == null
+                      ? ListView.builder(
+                          controller: _scrollCtrl,
+                          physics: const BouncingScrollPhysics(),
+                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            final m = _messages[index];
+                            final prevIsMe = index > 0 ? _messages[index - 1].isMe : null;
+                            final nextIsMe = index < _messages.length - 1 ? _messages[index + 1].isMe : null;
+                            return _Bubble(
+                              msg: m,
+                              startGroup: prevIsMe == null || prevIsMe != m.isMe,
+                              endGroup: nextIsMe == null || nextIsMe != m.isMe,
+                            );
+                          },
+                        )
+                      : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                          stream: _db
+                              .collection('chats')
+                              .doc(widget.chatId!)
+                              .collection('messages')
+                              .orderBy('createdAt', descending: false)
+                              .limit(500)
+                              .snapshots(),
+                          builder: (context, snap) {
+                            if (snap.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            if (!snap.hasData || snap.data!.docs.isEmpty) {
+                              return const SizedBox();
+                            }
+                            final docs = snap.data!.docs;
+                            return ListView.builder(
+                              controller: _scrollCtrl,
+                              physics: const BouncingScrollPhysics(),
+                              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                              padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+                              itemCount: docs.length,
+                              itemBuilder: (context, index) {
+                                final d = docs[index].data();
+                                final isMe = d['senderId'] == _myUid;
+                                final text = (d['text'] ?? '') as String;
+                                final ts = d['createdAt'];
+                                DateTime time;
+                                if (ts is Timestamp) {
+                                  time = ts.toDate();
+                                } else if (ts is DateTime) {
+                                  time = ts;
+                                } else {
+                                  time = DateTime.now();
+                                }
+                                final prevIsMe = index > 0 ? (docs[index - 1].data()['senderId'] == _myUid) : null;
+                                final nextIsMe = index < docs.length - 1 ? (docs[index + 1].data()['senderId'] == _myUid) : null;
+                                return _Bubble(
+                                  msg: _Msg(text: text, isMe: isMe, time: TimeOfDay.fromDateTime(time)),
+                                  startGroup: prevIsMe == null || prevIsMe != isMe,
+                                  endGroup: nextIsMe == null || nextIsMe != isMe,
+                                );
+                              },
+                            );
+                          },
+                        ),
                 ),
                 _Composer(controller: _textCtrl, onSend: _send),
               ],
