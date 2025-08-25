@@ -14,7 +14,7 @@ class BottomNav {
       case home:
         return Icons.home;
       case chat:
-        return Icons.chat;
+        return Icons.message;
       case calendar:
         return Icons.calendar_today;
       case profile:

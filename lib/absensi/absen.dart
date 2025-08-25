@@ -1,10 +1,13 @@
 // ================= Absen Kehadiran Page =================
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:ui';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/bindings/shared_preferences.dart';
+import 'package:cipta_vera_mandiri_digital/absensi/riwayat_absen.dart';
 
 enum _InStep { selfie, location, backPhoto, confirm }
 
@@ -35,6 +38,7 @@ class _AttendancePageState extends State<AttendancePage> {
   Position? _outPos;
 
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _projectController = TextEditingController();
 
   void _loadPersistedState() {
     checkInAt = AppPreferences.checkInAt;
@@ -135,6 +139,65 @@ class _AttendancePageState extends State<AttendancePage> {
   void initState() {
     super.initState();
     _loadPersistedState();
+  }
+
+  // Glass panel helper for glassmorphism UI panels
+  Widget _glassPanel({
+    required Widget child,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(12),
+    double radius = 16,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.22),
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: Colors.white.withOpacity(0.35), width: 1),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  // Glass toggle chip helper for location/project selection
+  Widget _glassChoice({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: (selected ? Colors.white.withOpacity(0.35) : Colors.white.withOpacity(0.15)),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white.withOpacity(0.55)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (selected) const Icon(Icons.check, size: 16, color: Colors.white),
+                if (selected) const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _inSelfieView() {
@@ -267,6 +330,132 @@ class _AttendancePageState extends State<AttendancePage> {
                 ],
               ),
             ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _glassPanel(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Pilih Lokasi',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _glassChoice(
+                    label: 'Kantor',
+                    selected: _projectController.text == 'Kantor',
+                    onTap: () {
+                      setState(() {
+                        _projectController.text = 'Kantor';
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  _glassChoice(
+                    label: 'Proyek',
+                    selected: _projectController.text.isNotEmpty && _projectController.text != 'Kantor',
+                    onTap: () {
+                      setState(() {
+                        _projectController.clear();
+                      });
+                      showDialog(
+                        context: context,
+                        builder: (ctx) {
+                          final tempController = TextEditingController(text: _projectController.text);
+                          return Dialog(
+                            backgroundColor: Colors.transparent,
+                            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(18),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(color: Colors.white.withOpacity(0.35), width: 1),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Nama Proyek', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                      const SizedBox(height: 10),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: BackdropFilter(
+                                          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(color: Colors.white.withOpacity(0.3)),
+                                            ),
+                                            child: TextField(
+                                              controller: tempController,
+                                              style: const TextStyle(color: Colors.white),
+                                              decoration: const InputDecoration(
+                                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                                hintText: 'Masukkan nama proyek',
+                                                hintStyle: TextStyle(color: Colors.white70),
+                                                border: InputBorder.none,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _glassButton(
+                                              onPressed: () => Navigator.of(ctx).pop(),
+                                              label: 'Batal',
+                                              expand: true,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: _glassButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  _projectController.text = tempController.text.trim();
+                                                });
+                                                Navigator.of(ctx).pop();
+                                              },
+                                              label: 'Simpan',
+                                              expand: true,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+              if (_projectController.text.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  'Lokasi: ${_projectController.text}',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ],
           ),
         ),
         const Spacer(),
@@ -471,6 +660,31 @@ class _AttendancePageState extends State<AttendancePage> {
                       _inStep = _InStep.confirm;
                     });
                     await _persistState();
+
+                    // Save check-in to Firestore
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user != null) {
+                      await FirebaseFirestore.instance.collection('attendance').add({
+                        'uid': user.uid,
+                        'type': 'checkin',
+                        'timestamp': checkInAt,
+                        'latitude': _inPos?.latitude,
+                        'longitude': _inPos?.longitude,
+                        'selfiePath': _inSelfie?.path,
+                        'backPhotoPath': _inBackPhoto?.path,
+                        'project': _projectController.text,
+                      });
+                    }
+
+                    // Save to local Riwayat Absen (SharedPreferences)
+                    await AttendanceHistory.saveRecord(
+                      date: DateTime.now(),
+                      checkInAt: checkInAt,
+                      lat: _inPos?.latitude,
+                      lon: _inPos?.longitude,
+                      project: _projectController.text.isNotEmpty ? _projectController.text : null, // isi nama proyek jika ada variabelnya
+                      note: 'Check-in dari aplikasi',
+                    );
                   }
                 : null,
             label: checkInAt == null ? 'Absen (Check-in)' : 'Anda sudah terabsen',

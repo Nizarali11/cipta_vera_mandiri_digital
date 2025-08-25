@@ -3,7 +3,7 @@ import 'package:cipta_vera_mandiri_digital/app/modules/widgets/floating_nav_bar.
 import 'package:flutter/material.dart';
 
 
-import 'chat_page.dart';
+import 'chat_list_page.dart';
 import 'calendar_page.dart';
 import 'profile_page.dart';
 import 'settings_page.dart';
@@ -36,7 +36,7 @@ class _HomePageState extends State<HomePage> {
           });
         },
       ),
-      const ChatPage(),
+      const ChatListPage(),
       const CalendarPage(),
       const ProfilePage(),
       const SettingsPage(),

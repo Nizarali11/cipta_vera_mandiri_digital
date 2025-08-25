@@ -1,6 +1,7 @@
 import 'package:cipta_vera_mandiri_digital/app/modules/home/views/home_view.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/pages/calendar_page.dart';
-import 'package:cipta_vera_mandiri_digital/app/modules/pages/chat_page.dart';
+import 'package:cipta_vera_mandiri_digital/app/modules/pages/chat_list_page.dart';
+import 'package:cipta_vera_mandiri_digital/app/modules/home/chat/chat_page.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/pages/profile_page.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/pages/settings_page.dart';
 import 'package:cipta_vera_mandiri_digital/app/routes/app_routes.dart';
@@ -107,7 +108,7 @@ class _AuthViewState extends State<AuthView> {
           });
         },
       ),
-      const ChatPage(),
+      const ChatListPage(),
       const CalendarPage(),
       const ProfilePage(),
       const SettingsPage(),

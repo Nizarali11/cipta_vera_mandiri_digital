@@ -19,7 +19,7 @@ class Event {
 Map<DateTime, List<Event>> calendarEvents = {};
 
 class HomeController extends GetxController {
-  var currentIndex = 0.obs;
+  var currentIndex = 2.obs;
   var events = <Event>[].obs;
   var isLoading = true.obs;
 

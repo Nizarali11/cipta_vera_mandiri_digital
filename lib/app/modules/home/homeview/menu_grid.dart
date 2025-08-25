@@ -3,6 +3,7 @@ import 'package:cipta_vera_mandiri_digital/absensi/absen.dart';
 import 'package:cipta_vera_mandiri_digital/absensi/cuti.dart';
 import 'package:cipta_vera_mandiri_digital/absensi/izin.dart';
 import 'package:cipta_vera_mandiri_digital/absensi/checkout.dart';
+import 'package:cipta_vera_mandiri_digital/absensi/riwayat_absen.dart';
 import 'package:flutter/material.dart';
  // sesuaikan path ini dengan lokasi CalendarPage
 
@@ -79,7 +80,10 @@ class MenuGrid extends StatelessWidget {
         // Riwayat Absen
         GestureDetector(
           onTap: () {
-            // TODO: arahkan ke halaman riwayat absen
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AttendanceHistoryPage()),
+            );
           },
           child: _MenuIcon(
             icon: Icons.history,

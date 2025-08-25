@@ -4,6 +4,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cipta_vera_mandiri_digital/absensi/riwayat_absen.dart';
 
 enum _OutStep { selfie, location, backPhoto, confirm }
 
@@ -305,10 +308,35 @@ class _AttendanceCheckoutPageState extends State<AttendanceCheckoutPage> {
             width: double.infinity,
             child: _glassButton(
               onPressed: _canCheckOut && checkOutAt == null
-                  ? () {
+                  ? () async {
+                      final now = DateTime.now();
                       setState(() {
-                        checkOutAt = DateTime.now();
+                        checkOutAt = now;
                       });
+
+                      // Save to Firestore
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user != null) {
+                        await FirebaseFirestore.instance.collection('attendance').add({
+                          'uid': user.uid,
+                          'type': 'checkout',
+                          'timestamp': now,
+                          'latitude': _outPos?.latitude,
+                          'longitude': _outPos?.longitude,
+                          'selfiePath': _outSelfie?.path,
+                          'backPhotoPath': _outBackPhoto?.path,
+                        });
+                      }
+
+                      // Save to local Riwayat
+                      await AttendanceHistory.saveRecord(
+                        date: now,
+                        checkOutAt: now,
+                        lat: _outPos?.latitude,
+                        lon: _outPos?.longitude,
+                        project: null,
+                        note: 'Check-out dari aplikasi',
+                      );
                     }
                   : null,
               label: checkOutAt == null ? 'Pulang (Check-out)' : 'Anda sudah absen pulang',
