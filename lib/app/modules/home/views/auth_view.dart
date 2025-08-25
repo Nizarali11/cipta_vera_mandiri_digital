@@ -6,6 +6,8 @@ import 'package:cipta_vera_mandiri_digital/app/modules/pages/settings_page.dart'
 import 'package:cipta_vera_mandiri_digital/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'login_view.dart' as my_views;
 import 'signup_view.dart' as my_views;
@@ -39,21 +41,52 @@ class _AuthViewState extends State<AuthView> {
 
   void _goToLogin() => setState(() => showLogin = true);
 
-  void _login() {
-    const dummyUsername = 'admin';
-    const dummyPassword = '123456';
-
+  Future<void> _login() async {
     if (loginUsernameController.text.isEmpty || loginPasswordController.text.isEmpty) {
-      Get.snackbar('Login Gagal', 'Username dan password wajib diisi',
+      Get.snackbar('Login Gagal', 'Email dan password wajib diisi',
           backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
 
-    if (loginUsernameController.text == dummyUsername &&
-        loginPasswordController.text == dummyPassword) {
+    try {
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: loginUsernameController.text.trim(),
+        password: loginPasswordController.text.trim(),
+      );
+
+      if (!userCredential.user!.emailVerified) {
+        await userCredential.user!.sendEmailVerification();
+        Get.snackbar('Email Belum Diverifikasi',
+            'Kami sudah kirim ulang link verifikasi ke email Anda.',
+            backgroundColor: Colors.orange, colorText: Colors.white);
+        return;
+      }
+
+      // Cek apakah profil sudah dilengkapi; jika belum, arahkan ke halaman lengkapi profil (sekali saja)
+      try {
+        final uid = userCredential.user!.uid;
+        final snap = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
+        final completed = snap.data()?['profileCompleted'] == true || snap.data()?['isComplete'] == true;
+        if (!completed) {
+          Get.offAllNamed('/complete-profile');
+          return;
+        }
+      } catch (e) {
+        // Jika gagal baca Firestore, tetap lanjut ke HOME agar tidak menghambat login
+      }
+
       Get.offAllNamed(Routes.HOME);
-    } else {
-      Get.snackbar('Login Gagal', 'Username atau password salah',
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Terjadi kesalahan';
+      if (e.code == 'user-not-found') {
+        msg = 'Pengguna tidak ditemukan';
+      } else if (e.code == 'wrong-password') {
+        msg = 'Password salah';
+      }
+      Get.snackbar('Login Gagal', msg,
           backgroundColor: Colors.red, colorText: Colors.white);
     }
   }

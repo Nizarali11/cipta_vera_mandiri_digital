@@ -16,6 +16,20 @@ import 'package:flutter/foundation.dart'
 /// );
 /// ```
 class DefaultFirebaseOptions {
+  // Helpers to read env safely and fail fast when required values are missing
+  static String _req(String key) {
+    final v = dotenv.env[key];
+    if (v == null || v.trim().isEmpty) {
+      throw StateError('Missing required env: ' + key + ' (check your .env and dotenv.load)');
+    }
+    return v;
+  }
+
+  static String? _opt(String key) {
+    final v = dotenv.env[key];
+    if (v == null || v.trim().isEmpty) return null;
+    return v;
+  }
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;
@@ -48,29 +62,29 @@ class DefaultFirebaseOptions {
   }
 
   static FirebaseOptions get web => FirebaseOptions(
-    apiKey: dotenv.env['WEB_API_KEY'] ?? '',
-    appId: dotenv.env['WEB_APP_ID'] ?? '',
-    messagingSenderId: dotenv.env['WEB_MESSAGING_SENDER_ID'] ?? '',
-    projectId: dotenv.env['WEB_PROJECT_ID'] ?? '',
-    authDomain: dotenv.env['WEB_AUTH_DOMAIN'],
-    storageBucket: dotenv.env['WEB_STORAGE_BUCKET'],
-    measurementId: dotenv.env['WEB_MEASUREMENT_ID'],
+    apiKey: _req('WEB_API_KEY'),
+    appId: _req('WEB_APP_ID'),
+    messagingSenderId: _req('WEB_MESSAGING_SENDER_ID'),
+    projectId: _req('WEB_PROJECT_ID'),
+    authDomain: _opt('WEB_AUTH_DOMAIN'),
+    storageBucket: _opt('WEB_STORAGE_BUCKET'),
+    measurementId: _opt('WEB_MEASUREMENT_ID'),
   );
 
   static FirebaseOptions get android => FirebaseOptions(
-    apiKey: dotenv.env['ANDROID_API_KEY'] ?? '',
-    appId: dotenv.env['ANDROID_APP_ID'] ?? '',
-    messagingSenderId: dotenv.env['ANDROID_MESSAGING_SENDER_ID'] ?? '',
-    projectId: dotenv.env['ANDROID_PROJECT_ID'] ?? '',
-    storageBucket: dotenv.env['ANDROID_STORAGE_BUCKET'],
+    apiKey: _req('ANDROID_API_KEY'),
+    appId: _req('ANDROID_APP_ID'),
+    messagingSenderId: _req('ANDROID_MESSAGING_SENDER_ID'),
+    projectId: _req('ANDROID_PROJECT_ID'),
+    storageBucket: _opt('ANDROID_STORAGE_BUCKET'),
   );
 
   static FirebaseOptions get ios => FirebaseOptions(
-    apiKey: dotenv.env['IOS_API_KEY'] ?? '',
-    appId: dotenv.env['IOS_APP_ID'] ?? '',
-    messagingSenderId: dotenv.env['IOS_MESSAGING_SENDER_ID'] ?? '',
-    projectId: dotenv.env['IOS_PROJECT_ID'] ?? '',
-    storageBucket: dotenv.env['IOS_STORAGE_BUCKET'],
-    iosBundleId: dotenv.env['IOS_BUNDLE_ID'],
+    apiKey: _req('IOS_API_KEY'),
+    appId: _req('IOS_APP_ID'),
+    messagingSenderId: _req('IOS_MESSAGING_SENDER_ID'),
+    projectId: _req('IOS_PROJECT_ID'),
+    storageBucket: _opt('IOS_STORAGE_BUCKET'),
+    iosBundleId: _opt('IOS_BUNDLE_ID'),
   );
 }

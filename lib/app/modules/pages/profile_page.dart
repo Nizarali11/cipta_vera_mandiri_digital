@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Notifier global supaya halaman lain (mis. Settings) tahu ada perubahan profil secara real-time
 ValueNotifier<int> profileChanged = ValueNotifier<int>(0);
@@ -20,11 +22,15 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String nama = "Nizar Ali";
   String tentang = "Sibuk";
+  String pin = ""; // diisi dari data saat lengkap data diri / signup
+  String role = ""; // disinkron dari Lengkapi Data Diri
+  String chatName = ""; // Nama tampilan untuk chat (editable)
   File? fotoProfil;
   bool _changed = false;
 
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _tentangController = TextEditingController();
+  final TextEditingController _chatNameController = TextEditingController();
 
   void _onProfileChanged() async {
     await _loadProfile();
@@ -45,6 +51,31 @@ class _ProfilePageState extends State<ProfilePage> {
     final savedName = prefs.getString('nama');
     final savedAbout = prefs.getString('tentang');
     final savedPath = prefs.getString('fotoProfil');
+    final savedChatName = prefs.getString('chatName');
+    String? savedPin =
+        prefs.getString('userPin') ??
+        prefs.getString('generatedPin') ??
+        prefs.getString('cvPin') ??
+        prefs.getString('cv_pin') ??
+        prefs.getString('cvNumber') ??
+        prefs.getString('cv_number') ??
+        prefs.getString('cvID') ??
+        prefs.getString('cv_id') ??
+        prefs.getString('pin') ??
+        prefs.getString('user_pin');
+    if (savedPin != null) {
+      savedPin = savedPin.trim().toUpperCase();
+    }
+    if (kDebugMode) {
+      debugPrint('[Profile] loadPin: $savedPin');
+    }
+
+    final savedRole =
+        prefs.getString('role') ??
+        prefs.getString('userRole') ??
+        prefs.getString('user_role') ??
+        prefs.getString('jabatan') ??
+        prefs.getString('position');
 
     final dir = await getApplicationDocumentsDirectory();
     final fixedPath = '${dir.path}/profile.jpg';
@@ -74,7 +105,74 @@ class _ProfilePageState extends State<ProfilePage> {
       nama = savedName ?? nama;
       tentang = savedAbout ?? tentang;
       fotoProfil = resolved;
+      pin = savedPin ?? pin;
+      role = savedRole ?? role;
+      chatName = savedChatName ?? chatName;
     });
+
+    // Jika PIN/role/nama belum ada di prefs, coba backfill dari Firestore sekali
+    if ((pin.isEmpty) || (role.isEmpty) || (nama.isEmpty || nama == 'Nizar Ali')) {
+      // tidak await agar UI tidak tersendat; method akan setState sendiri saat selesai
+      // tetapi jika ingin sinkron blocking, bisa jadikan await
+      // ignore: discarded_futures
+      _loadProfileFromFirestore();
+    }
+  }
+
+  Future<void> _loadProfileFromFirestore() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final snap = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (!snap.exists) return;
+      final data = snap.data();
+      if (data == null) return;
+
+      final String fsName = (data['name'] ?? data['nama'] ?? '').toString();
+      final String fsAbout = (data['about'] ?? data['tentang'] ?? '').toString();
+      final String fsRole = (data['role'] ?? '').toString();
+      final String fsPin  = (data['chatPin'] ?? data['pin'] ?? data['cv_pin'] ?? '').toString();
+      final String fsChatName = (data['chatName'] ?? '').toString();
+      // NOTE: fotoProfil biasanya URL di Firestore; kita tidak menimpa path lokal jika sudah ada.
+
+      final prefs = await SharedPreferences.getInstance();
+      if (fsName.isNotEmpty) {
+        await prefs.setString('nama', fsName);
+        _namaController.text = fsName;
+      }
+      if (fsAbout.isNotEmpty) {
+        await prefs.setString('tentang', fsAbout);
+        _tentangController.text = fsAbout;
+      }
+      if (fsRole.isNotEmpty) await prefs.setString('role', fsRole);
+      if (fsPin.isNotEmpty) await prefs.setString('userPin', fsPin);
+      if (fsChatName.isNotEmpty) await prefs.setString('chatName', fsChatName);
+
+      if (!mounted) return;
+      setState(() {
+        if (fsName.isNotEmpty) {
+          nama = fsName;
+          _namaController.text = fsName;
+        }
+        if (fsAbout.isNotEmpty) {
+          tentang = fsAbout;
+          _tentangController.text = fsAbout;
+        }
+        if (fsRole.isNotEmpty) role = fsRole;
+        if (fsPin.isNotEmpty) pin = fsPin.toUpperCase();
+        if (fsChatName.isNotEmpty) {
+          chatName = fsChatName;
+          _chatNameController.text = fsChatName;
+        }
+      });
+
+      if (kDebugMode) {
+        debugPrint('[Profile] Firestore sync: name=$fsName role=$fsRole pin=$fsPin');
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Profile] Firestore load error: $e');
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -111,8 +209,15 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _editField(String field) async {
-    final controller = field == "Nama" ? _namaController : _tentangController;
-    controller.text = field == "Nama" ? nama : tentang;
+    final controller =
+        field == "Nama Chat" ? _chatNameController : (field == "Nama" ? _namaController : _tentangController);
+    if (field == "Nama Chat") {
+      controller.text = chatName;
+    } else if (field == "Nama") {
+      controller.text = nama;
+    } else {
+      controller.text = tentang;
+    }
 
     final result = await showModalBottomSheet<String>(
       context: context,
@@ -200,15 +305,31 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (result != null && result.isNotEmpty) {
-      setState(() {
-        if (field == "Nama") {
-          nama = result;
-        } else {
-          tentang = result;
-        }
-      });
-      _saveProfile();
+      final prefs = await SharedPreferences.getInstance();
+      if (field == "Nama Chat") {
+        setState(() {
+          chatName = result;
+          _chatNameController.text = result;
+        });
+        await prefs.setString('chatName', result);
+        try {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user != null) {
+            await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+              'chatName': result,
+            }, SetOptions(merge: true));
+          }
+        } catch (_) {}
+      } else if (field == "Nama") {
+        // (Opsional) jika ingin mengizinkan ubah real name lokal, tetap simpan ke prefs lokal
+        setState(() { nama = result; _namaController.text = result; });
+        await _saveProfile();
+      } else {
+        setState(() { tentang = result; _tentangController.text = result; });
+        await _saveProfile();
+      }
       _changed = true;
+      profileChanged.value++;
     }
   }
 
@@ -386,182 +507,284 @@ class _ProfilePageState extends State<ProfilePage> {
           iconTheme: const IconThemeData(color: Colors.black),
         ),
         backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            children: [
-              const SizedBox(height: 0),
-              // Profile picture and edit
-              Center(
-                child: Column(
-                  children: [
-                    ValueListenableBuilder<int>(
-                      valueListenable: profileChanged,
-                      builder: (_, __, ___) {
-                        final img = fotoProfil;
-                        if (img != null) {
-                          return ClipOval(
-                            child: Image.file(
-                              img,
-                              key: ValueKey(profileChanged.value), // bust cache on change
-                              width: 96,
-                              height: 96,
-                              fit: BoxFit.cover,
-                            ),
-                          );
-                        }
-                        return CircleAvatar(
-                          radius: 48,
-                          backgroundColor: Colors.grey[300],
-                          child: const Icon(
-                            Icons.person,
-                            size: 56,
-                            color: Colors.white,
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+        body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: FirebaseAuth.instance.currentUser == null
+              ? null
+              : FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                  .snapshots(),
+          builder: (context, snapshot) {
+            final data = snapshot.data?.data();
+            final nameFs = (data?['name'] ?? data?['nama'] ?? '').toString();
+            final aboutFs = (data?['about'] ?? data?['tentang'] ?? '').toString();
+            final roleFs = (data?['role'] ?? '').toString();
+            final pinFs  = (data?['chatPin'] ?? data?['pin'] ?? data?['cv_pin'] ?? '').toString();
+            final fotoUrl = (data?['fotoProfil'] ?? '').toString();
+            final chatNameFs = (data?['chatName'] ?? '').toString();
+
+            // Decide displayed values (Firestore realtime > local prefs fallback)
+            final displayName = nameFs.isNotEmpty ? nameFs : nama;
+            final displayAbout = aboutFs.isNotEmpty ? aboutFs : tentang;
+            final displayRole = roleFs.isNotEmpty ? roleFs : role;
+            final displayPin = (pinFs.isNotEmpty ? pinFs : pin).toUpperCase();
+            final displayChatName = chatNameFs.isNotEmpty ? chatNameFs : chatName;
+            final displayRealName = displayName;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 0),
+                  // Profile picture and edit
+                  Center(
+                    child: Column(
                       children: [
-                        TextButton.icon(
-                          onPressed: _showPhotoOptions,
-                         style: TextButton.styleFrom(foregroundColor: const Color.fromARGB(255, 13, 114, 198)),
-                          label: const Text("Edit"),
+                        ValueListenableBuilder<int>(
+                          valueListenable: profileChanged,
+                          builder: (_, __, ___) {
+                            final img = fotoProfil; // local file takes priority
+                            if (img != null) {
+                              return ClipOval(
+                                child: Image.file(
+                                  img,
+                                  key: ValueKey(profileChanged.value),
+                                  width: 96,
+                                  height: 96,
+                                  fit: BoxFit.cover,
+                                ),
+                              );
+                            }
+                            if (fotoUrl.isNotEmpty) {
+                              return CircleAvatar(
+                                radius: 48,
+                                backgroundImage: NetworkImage(fotoUrl),
+                                backgroundColor: Colors.grey[300],
+                              );
+                            }
+                            return CircleAvatar(
+                              radius: 48,
+                              backgroundColor: Colors.grey[300],
+                              child: const Icon(
+                                Icons.person,
+                                size: 56,
+                                color: Colors.white,
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 0),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextButton.icon(
+                              onPressed: _showPhotoOptions,
+                              style: TextButton.styleFrom(foregroundColor: const Color.fromARGB(255, 13, 114, 198)),
+                              label: const Text("Edit"),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              // Info section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Nama
-                    const Text(
-                      'Nama',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 51, 51, 51),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withOpacity(0.2),
-                            blurRadius: 1,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        title: Text(
-                          nama,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color.fromARGB(255, 51, 51, 51),
-                          ),
-                        ),
-                        trailing: const Icon(Icons.edit, size: 18, color: Colors.grey),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                        dense: true,
-                        onTap: () => _editField("Nama"),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Tentang
-                    const Text(
-                      'Tentang',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 51, 51, 51),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 1,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        title: Text(
-                          tentang,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color.fromARGB(255, 51, 51, 51),
-                          ),
-                        ),
-                        trailing: const Icon(Icons.edit, size: 18, color: Colors.grey),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                        dense: true,
-                        onTap: () => _editField("Tentang"),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // PIN
-                    const Text(
-                      'PIN',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 51, 51, 51),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 1,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const ListTile(
-                        title: Text(
-                          '243893743N',
+                  ),
+                  const SizedBox(height: 32),
+                  // Info section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Nama (Real)
+                        const Text(
+                          'Nama (Real)',
                           style: TextStyle(
-                            fontSize: 16,
                             color: Color.fromARGB(255, 51, 51, 51),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
                         ),
-                        trailing: Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                        dense: true,
-                      ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.2),
+                                blurRadius: 1,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              displayRealName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color.fromARGB(255, 51, 51, 51),
+                              ),
+                            ),
+                            trailing: const Icon(Icons.verified_user, size: 18, color: Colors.grey),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            dense: true,
+                            onTap: null,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Nama untuk Chat
+                        const Text(
+                          'Nama untuk Chat',
+                          style: TextStyle(
+                            color: Color.fromARGB(255, 51, 51, 51),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.2),
+                                blurRadius: 1,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              (displayChatName.isNotEmpty ? displayChatName : displayRealName),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color.fromARGB(255, 51, 51, 51),
+                              ),
+                            ),
+                            trailing: const Icon(Icons.edit, size: 18, color: Colors.grey),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            dense: true,
+                            onTap: () => _editField('Nama Chat'),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Tentang
+                        const Text(
+                          'Tentang',
+                          style: TextStyle(
+                            color: Color.fromARGB(255, 51, 51, 51),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 1,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              displayAbout,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color.fromARGB(255, 51, 51, 51),
+                              ),
+                            ),
+                            trailing: const Icon(Icons.edit, size: 18, color: Colors.grey),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            dense: true,
+                            onTap: () => _editField("Tentang"),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // PIN
+                        const Text(
+                          'PIN',
+                          style: TextStyle(
+                            color: Color.fromARGB(255, 51, 51, 51),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 1,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              displayPin.isNotEmpty ? displayPin : '- Belum ada PIN -',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color.fromARGB(255, 51, 51, 51),
+                              ),
+                            ),
+                            trailing: const Icon(Icons.lock, size: 18, color: Colors.grey),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            dense: true,
+                            onTap: null,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Role
+                        const Text(
+                          'Role',
+                          style: TextStyle(
+                            color: Color.fromARGB(255, 51, 51, 51),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 1,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              displayRole.isNotEmpty ? displayRole : '- Belum ada role -',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color.fromARGB(255, 51, 51, 51),
+                              ),
+                            ),
+                            trailing: const Icon(Icons.work, size: 18, color: Colors.grey),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                            dense: true,
+                            onTap: null,
+                          ),
+                        ),
+                      ],
                     ),
-                  
-                      
-                    
-                  ],
-                ),
+                  ),
+                ],
               ),
-              // Removed Spacer
-              // Bottom navigation bar
-             
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -571,6 +794,7 @@ class _ProfilePageState extends State<ProfilePage> {
     profileChanged.removeListener(_onProfileChanged);
     _namaController.dispose();
     _tentangController.dispose();
+    _chatNameController.dispose();
     super.dispose();
   }
 }

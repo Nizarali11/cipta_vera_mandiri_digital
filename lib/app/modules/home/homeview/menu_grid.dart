@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:cipta_vera_mandiri_digital/absensi/absen.dart';
 import 'package:cipta_vera_mandiri_digital/absensi/cuti.dart';
 import 'package:cipta_vera_mandiri_digital/absensi/izin.dart';
+import 'package:cipta_vera_mandiri_digital/absensi/checkout.dart';
 import 'package:flutter/material.dart';
  // sesuaikan path ini dengan lokasi CalendarPage
 
@@ -61,11 +62,30 @@ class MenuGrid extends StatelessWidget {
             color: Colors.purple[400]!,
           ),
         ),
-        // Pemberkasan
-        _MenuIcon(
-          icon: Icons.insert_drive_file,
-          label: 'Pemberkasan',
-          color: Colors.grey[400]!,
+        // Absen Pulang
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AttendanceCheckoutPage()),
+            );
+          },
+          child: _MenuIcon(
+            icon: Icons.logout,
+            label: 'Absen Pulang',
+            color: Colors.teal[400]!,
+          ),
+        ),
+        // Riwayat Absen
+        GestureDetector(
+          onTap: () {
+            // TODO: arahkan ke halaman riwayat absen
+          },
+          child: _MenuIcon(
+            icon: Icons.history,
+            label: 'Riwayat Absen',
+            color: Colors.brown[400]!,
+          ),
         ),
         // Kalender
         GestureDetector(
@@ -78,11 +98,23 @@ class MenuGrid extends StatelessWidget {
             color: Colors.blue[300]!,
           ),
         ),
+        // Pemberkasan
+        _MenuIcon(
+          icon: Icons.insert_drive_file,
+          label: 'Pemberkasan',
+          color: Colors.grey[400]!,
+        ),
         // Permintaan Material
         _MenuIcon(
           icon: Icons.shopping_cart,
           label: 'Permintaan Material',
           color: Colors.red[300]!,
+        ),
+        // Keuangan
+        _MenuIcon(
+          icon: Icons.account_balance_wallet,
+          label: 'Keuangan',
+          color: Colors.indigo[400]!,
         ),
       ],
     );

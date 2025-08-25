@@ -51,6 +51,7 @@ dependencies:
   flutter_map: ^6.1.0
   latlong2: ^0.9.1
   google_maps_flutter: ^2.5.0
+  cloud_firestore: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,7 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   assets:
+  - .env
   - lib/app/assets/images/cvm.png
   - lib/app/assets/images/goggle.png
 

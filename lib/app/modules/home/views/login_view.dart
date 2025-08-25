@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginView extends StatefulWidget {
   final TextEditingController usernameController;
@@ -22,6 +23,98 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   bool _obscurePassword = true;
+  bool _loading = false;
+
+  Future<void> _handleLogin() async {
+    final email = widget.usernameController.text.trim();
+    final pass  = widget.passwordController.text.trim();
+
+    // Validasi sederhana
+    if (email.isEmpty || pass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email dan password wajib diisi')),
+      );
+      return;
+    }
+    final emailOk = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email);
+    if (!emailOk) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Format email tidak valid')),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+    try {
+      final cred = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: pass);
+
+      final user = cred.user;
+      if (user != null && !user.emailVerified) {
+        // Opsional: kirim ulang verifikasi otomatis (silent)
+        try { await user.sendEmailVerification(); } catch (_) {}
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email belum diverifikasi. Cek inbox/spam dan verifikasi dulu.')),
+        );
+        setState(() => _loading = false);
+        return;
+      }
+
+      // Cek apakah profil sudah dilengkapi; jika belum, arahkan ke halaman lengkapi profil
+      try {
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+        final snap = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
+
+        final completed = snap.data()?['profileCompleted'] == true;
+        if (!completed) {
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, '/complete-profile');
+          return;
+        }
+      } catch (e) {
+        // Jika gagal membaca Firestore, tetap lanjut ke onLoginSuccess agar tidak menghalangi login
+      }
+
+      if (!mounted) return;
+      widget.onLoginSuccess();
+    } on FirebaseAuthException catch (e) {
+      String msg = 'Gagal login';
+      switch (e.code) {
+        case 'user-not-found':
+          msg = 'Akun tidak ditemukan';
+          break;
+        case 'wrong-password':
+          msg = 'Password salah';
+          break;
+        case 'invalid-credential':
+          msg = 'Email atau password salah';
+          break;
+        case 'invalid-email':
+          msg = 'Email tidak valid';
+          break;
+        case 'too-many-requests':
+          msg = 'Terlalu banyak percobaan. Coba lagi nanti.';
+          break;
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +168,7 @@ class _LoginViewState extends State<LoginView> {
                    
                     TextField(
                       controller: widget.usernameController,
+                      keyboardType: TextInputType.emailAddress,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         filled: true,
@@ -163,16 +257,22 @@ class _LoginViewState extends State<LoginView> {
                               shadowColor: Colors.transparent,
                               elevation: 0,
                             ),
-                            onPressed: widget.onLoginSuccess,
-                            child: const Text(
-                              "Login",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
+                            onPressed: _loading ? null : _handleLogin,
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Text(
+                                    "Login",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: Colors.white,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
                           ),
                         ),
                       ),

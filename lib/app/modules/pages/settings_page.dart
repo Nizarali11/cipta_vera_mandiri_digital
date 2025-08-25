@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/widgets/floating_nav_bar.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/pages/profile_page.dart' as profile;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsPage extends StatefulWidget {
   final void Function(int)? onMenuSelected;
@@ -75,6 +77,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -113,54 +116,127 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    // Profile Section
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 252, 252, 252).withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 1,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundColor: Colors.grey,
-                            backgroundImage: _fotoProfil != null ? FileImage(_fotoProfil!) : null,
-                            child: _fotoProfil == null ? const Icon(Icons.person, color: Colors.white) : null,
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _nama,
-                                style: const TextStyle(
-                                  color: Color.fromARGB(255, 51, 51, 51),
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                    // Profile Section (Firestore realtime + fallback local)
+                    if (user == null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 252, 252, 252).withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 1,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 28,
+                              backgroundColor: Colors.grey,
+                              backgroundImage: _fotoProfil != null ? FileImage(_fotoProfil!) : null,
+                              child: _fotoProfil == null ? const Icon(Icons.person, color: Colors.white) : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _nama,
+                                  style: const TextStyle(
+                                    color: Color.fromARGB(255, 51, 51, 51),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _tentang,
-                                style: const TextStyle(
-                                  color: Color.fromARGB(255, 51, 51, 51),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _tentang,
+                                  style: const TextStyle(
+                                    color: Color.fromARGB(255, 51, 51, 51),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          const Icon(Icons.qr_code, color: Color.fromARGB(255, 85, 83, 83), size: 30),
-                        ],
+                              ],
+                            ),
+                            const Spacer(),
+                            const Icon(Icons.qr_code, color: Color.fromARGB(255, 85, 83, 83), size: 30),
+                          ],
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                        stream: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(user.uid)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          final data = snapshot.data?.data();
+                          final nameFs = (data?['name'] ?? data?['nama'] ?? '').toString();
+                          final aboutFs = (data?['about'] ?? data?['tentang'] ?? '').toString();
+                          final fotoUrl = (data?['fotoProfil'] ?? '').toString();
+
+                          final displayName = nameFs.isNotEmpty ? nameFs : _nama;
+                          final displayAbout = aboutFs.isNotEmpty ? aboutFs : _tentang;
+
+                          ImageProvider? avatar;
+                          if (_fotoProfil != null) {
+                            avatar = FileImage(_fotoProfil!);
+                          } else if (fotoUrl.isNotEmpty) {
+                            avatar = NetworkImage(fotoUrl);
+                          }
+
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 252, 252, 252).withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 1,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 28,
+                                  backgroundColor: Colors.grey,
+                                  backgroundImage: avatar,
+                                  child: avatar == null ? const Icon(Icons.person, color: Colors.white) : null,
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: const TextStyle(
+                                        color: Color.fromARGB(255, 51, 51, 51),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      displayAbout,
+                                      style: const TextStyle(
+                                        color: Color.fromARGB(255, 51, 51, 51),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Spacer(),
+                                const Icon(Icons.qr_code, color: Color.fromARGB(255, 85, 83, 83), size: 30),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 15),
                     // First menu group
                     Container(

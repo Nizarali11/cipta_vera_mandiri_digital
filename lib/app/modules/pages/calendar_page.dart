@@ -44,6 +44,11 @@ class _CalendarPageState extends State<CalendarPage> {
     loadEvents();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> saveEvents() async {
     final prefs = await SharedPreferences.getInstance();
     final eventsJson = _events.map((key, value) {
@@ -64,6 +69,7 @@ class _CalendarPageState extends State<CalendarPage> {
         );
         return MapEntry(date, eventsList);
       });
+      if (!mounted) return;
       setState(() {
         _events = loadedEvents;
       });
@@ -96,6 +102,7 @@ class _CalendarPageState extends State<CalendarPage> {
         final date = _normalizeDate(DateTime(year, month, day));
         holidays[date] = [name];
       }
+      if (!mounted) return;
       setState(() {
         _holidays = holidays;
       });
@@ -238,6 +245,7 @@ class _CalendarPageState extends State<CalendarPage> {
                           TextButton(
                             onPressed: () {
                               if (eventController.text.isNotEmpty && timeController.text.isNotEmpty) {
+                                if (!mounted) return;
                                 setState(() {
                                   final normalizedDay = _normalizeDate(_selectedDay);
                                   final newEvent = {
@@ -615,6 +623,7 @@ class _CalendarPageState extends State<CalendarPage> {
                               IconButton(
                                 icon: const Icon(Icons.delete),
                                 onPressed: () {
+                                  if (!mounted) return;
                                   setState(() {
                                     final normalizedDay = _normalizeDate(_selectedDay);
                                     _events[normalizedDay]?.remove(event);

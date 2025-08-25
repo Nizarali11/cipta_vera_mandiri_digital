@@ -1,6 +1,7 @@
 import 'package:cipta_vera_mandiri_digital/app/modules/home/bindings/home_binding.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/views/auth_view.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/pages/homepage.dart';
+import 'package:cipta_vera_mandiri_digital/app/modules/profile/complete_profile_page.dart';
 import 'package:get/get.dart';
 
 import '../modules/home/bindings/login_binding.dart';
@@ -17,6 +18,10 @@ class AppPages {
       name: Routes.HOME,
       page: () => HomePage(),
         binding: HomeBinding(),
+    ),
+    GetPage(
+      name: '/complete-profile',
+      page: () => const CompleteProfilePage(),
     ),
   ];
 }
