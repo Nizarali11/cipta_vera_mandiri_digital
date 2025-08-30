@@ -24,20 +24,21 @@ class _ProfilePageState extends State<ProfilePage> {
   String tentang = "Sibuk";
   String pin = ""; // diisi dari data saat lengkap data diri / signup
   String role = ""; // disinkron dari Lengkapi Data Diri
-  String chatName = ""; // Nama tampilan untuk chat (editable)
   File? fotoProfil;
   bool _changed = false;
 
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _tentangController = TextEditingController();
-  final TextEditingController _chatNameController = TextEditingController();
+
+  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+  String _k(String base) => _uid == null ? base : '${base}_${_uid}';
 
   void _onProfileChanged() async {
     await _loadProfile();
     try {
       // Evict cached image for the fixed profile file so UI reloads fresh bytes
       final dir = await getApplicationDocumentsDirectory();
-      final fixed = File('${dir.path}/profile.jpg');
+      final fixed = File('${dir.path}/profile_${_uid ?? 'local'}.jpg');
       await FileImage(fixed).evict();
       if (fotoProfil != null) {
         await FileImage(fotoProfil!).evict();
@@ -48,10 +49,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedName = prefs.getString('nama');
-    final savedAbout = prefs.getString('tentang');
-    final savedPath = prefs.getString('fotoProfil');
-    final savedChatName = prefs.getString('chatName');
+    final savedName = prefs.getString(_k('nama'));
+    final savedAbout = prefs.getString(_k('tentang'));
+    final savedPath = prefs.getString(_k('fotoProfil'));
     String? savedPin =
         prefs.getString('userPin') ??
         prefs.getString('generatedPin') ??
@@ -78,7 +78,7 @@ class _ProfilePageState extends State<ProfilePage> {
         prefs.getString('position');
 
     final dir = await getApplicationDocumentsDirectory();
-    final fixedPath = '${dir.path}/profile.jpg';
+    final fixedPath = '${dir.path}/profile_${_uid ?? 'local'}.jpg';
     final fixedFile = File(fixedPath);
 
     if (kDebugMode) {
@@ -91,12 +91,12 @@ class _ProfilePageState extends State<ProfilePage> {
     } else if (fixedFile.existsSync()) {
       // Fallback ke file tetap jika prefs kosong/invalid
       resolved = fixedFile;
-      await prefs.setString('fotoProfil', fixedPath); // self-heal
+      await prefs.setString(_k('fotoProfil'), fixedPath); // self-heal
       if (kDebugMode) debugPrint('[Profile] load: self-healed fotoProfil to fixed path');
     } else {
       // Tidak ada foto tersimpan
       if (savedPath != null) {
-        await prefs.remove('fotoProfil');
+        await prefs.remove(_k('fotoProfil'));
         if (kDebugMode) debugPrint('[Profile] load: removed stale fotoProfil path from SharedPreferences');
       }
     }
@@ -107,7 +107,6 @@ class _ProfilePageState extends State<ProfilePage> {
       fotoProfil = resolved;
       pin = savedPin ?? pin;
       role = savedRole ?? role;
-      chatName = savedChatName ?? chatName;
     });
 
     // Jika PIN/role/nama belum ada di prefs, coba backfill dari Firestore sekali
@@ -133,7 +132,6 @@ class _ProfilePageState extends State<ProfilePage> {
       final String fsAbout = (data['about'] ?? data['tentang'] ?? '').toString();
       final String fsRole = (data['role'] ?? '').toString();
       final String fsPin  = (data['chatPin'] ?? data['pin'] ?? data['cv_pin'] ?? '').toString();
-      final String fsChatName = (data['chatName'] ?? '').toString();
       // NOTE: fotoProfil biasanya URL di Firestore; kita tidak menimpa path lokal jika sudah ada.
 
       final prefs = await SharedPreferences.getInstance();
@@ -147,7 +145,6 @@ class _ProfilePageState extends State<ProfilePage> {
       }
       if (fsRole.isNotEmpty) await prefs.setString('role', fsRole);
       if (fsPin.isNotEmpty) await prefs.setString('userPin', fsPin);
-      if (fsChatName.isNotEmpty) await prefs.setString('chatName', fsChatName);
 
       if (!mounted) return;
       setState(() {
@@ -161,10 +158,6 @@ class _ProfilePageState extends State<ProfilePage> {
         }
         if (fsRole.isNotEmpty) role = fsRole;
         if (fsPin.isNotEmpty) pin = fsPin.toUpperCase();
-        if (fsChatName.isNotEmpty) {
-          chatName = fsChatName;
-          _chatNameController.text = fsChatName;
-        }
       });
 
       if (kDebugMode) {
@@ -177,12 +170,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _saveProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('nama', nama);
-    await prefs.setString('tentang', tentang);
+    await prefs.setString(_k('nama'), nama);
+    await prefs.setString(_k('tentang'), tentang);
     if (fotoProfil != null) {
-      await prefs.setString('fotoProfil', fotoProfil!.path);
+      await prefs.setString(_k('fotoProfil'), fotoProfil!.path);
     } else {
-      await prefs.remove('fotoProfil');
+      await prefs.remove(_k('fotoProfil'));
     }
     _changed = true;
     profileChanged.value++;
@@ -193,7 +186,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<File> _persistImage(File src) async {
     final dir = await getApplicationDocumentsDirectory();
-    final String newPath = '${dir.path}/profile.jpg';
+    final String newPath = '${dir.path}/profile_${_uid ?? 'local'}.jpg';
     final File dst = File(newPath);
     if (dst.existsSync()) {
       try { await dst.delete(); } catch (_) {}
@@ -209,11 +202,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _editField(String field) async {
-    final controller =
-        field == "Nama Chat" ? _chatNameController : (field == "Nama" ? _namaController : _tentangController);
-    if (field == "Nama Chat") {
-      controller.text = chatName;
-    } else if (field == "Nama") {
+    final controller = (field == "Nama" ? _namaController : _tentangController);
+    if (field == "Nama") {
       controller.text = nama;
     } else {
       controller.text = tentang;
@@ -305,23 +295,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (result != null && result.isNotEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      if (field == "Nama Chat") {
-        setState(() {
-          chatName = result;
-          _chatNameController.text = result;
-        });
-        await prefs.setString('chatName', result);
-        try {
-          final user = FirebaseAuth.instance.currentUser;
-          if (user != null) {
-            await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-              'chatName': result,
-            }, SetOptions(merge: true));
-          }
-        } catch (_) {}
-      } else if (field == "Nama") {
-        // (Opsional) jika ingin mengizinkan ubah real name lokal, tetap simpan ke prefs lokal
+      if (field == "Nama") {
         setState(() { nama = result; _namaController.text = result; });
         await _saveProfile();
       } else {
@@ -338,7 +312,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     try {
       final dir = await getApplicationDocumentsDirectory();
-      final fixed = File('${dir.path}/profile.jpg');
+      final fixed = File('${dir.path}/profile_${_uid ?? 'local'}.jpg');
       if (fixed.existsSync()) { await fixed.delete(); }
       if (fotoProfil != null && fotoProfil!.existsSync()) { await fotoProfil!.delete(); }
       try {
@@ -352,7 +326,7 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {
       fotoProfil = null;
     });
-    await prefs.remove('fotoProfil');
+    await prefs.remove(_k('fotoProfil'));
     await _saveProfile();
     _changed = true;
   }
@@ -521,14 +495,12 @@ class _ProfilePageState extends State<ProfilePage> {
             final roleFs = (data?['role'] ?? '').toString();
             final pinFs  = (data?['chatPin'] ?? data?['pin'] ?? data?['cv_pin'] ?? '').toString();
             final fotoUrl = (data?['fotoProfil'] ?? '').toString();
-            final chatNameFs = (data?['chatName'] ?? '').toString();
 
             // Decide displayed values (Firestore realtime > local prefs fallback)
             final displayName = nameFs.isNotEmpty ? nameFs : nama;
             final displayAbout = aboutFs.isNotEmpty ? aboutFs : tentang;
             final displayRole = roleFs.isNotEmpty ? roleFs : role;
             final displayPin = (pinFs.isNotEmpty ? pinFs : pin).toUpperCase();
-            final displayChatName = chatNameFs.isNotEmpty ? chatNameFs : chatName;
             final displayRealName = displayName;
 
             return SingleChildScrollView(
@@ -632,42 +604,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         const SizedBox(height: 20),
                         // Nama untuk Chat
-                        const Text(
-                          'Nama untuk Chat',
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 51, 51, 51),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white.withOpacity(0.2),
-                                blurRadius: 1,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            title: Text(
-                              (displayChatName.isNotEmpty ? displayChatName : displayRealName),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color.fromARGB(255, 51, 51, 51),
-                              ),
-                            ),
-                            trailing: const Icon(Icons.edit, size: 18, color: Colors.grey),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                            dense: true,
-                            onTap: () => _editField('Nama Chat'),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
                         // Tentang
                         const Text(
                           'Tentang',
@@ -794,7 +730,6 @@ class _ProfilePageState extends State<ProfilePage> {
     profileChanged.removeListener(_onProfileChanged);
     _namaController.dispose();
     _tentangController.dispose();
-    _chatNameController.dispose();
     super.dispose();
   }
 }

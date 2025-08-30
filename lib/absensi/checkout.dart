@@ -317,10 +317,17 @@ class _AttendanceCheckoutPageState extends State<AttendanceCheckoutPage> {
                       // Save to Firestore
                       final user = FirebaseAuth.instance.currentUser;
                       if (user != null) {
-                        await FirebaseFirestore.instance.collection('attendance').add({
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(user.uid)
+                            .collection('attendance')
+                            .add({
                           'uid': user.uid,
+                          'status': 'checkout',
                           'type': 'checkout',
-                          'timestamp': now,
+                          'date': Timestamp.fromDate(now),
+                          'createdAt': Timestamp.fromDate(now),
+                          'time': now.millisecondsSinceEpoch,
                           'latitude': _outPos?.latitude,
                           'longitude': _outPos?.longitude,
                           'selfiePath': _outSelfie?.path,

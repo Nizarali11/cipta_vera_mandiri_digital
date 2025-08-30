@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LeavePage extends StatefulWidget {
   const LeavePage({super.key});
@@ -14,6 +16,7 @@ class _LeavePageState extends State<LeavePage> {
   DateTime? startDate;
   DateTime? endDate;
   final reasonCtrl = TextEditingController();
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -94,6 +97,80 @@ class _LeavePageState extends State<LeavePage> {
       ),
     );
     return btn;
+  }
+
+  int _daySpan(DateTime a, DateTime b) {
+    final aa = DateTime(a.year, a.month, a.day);
+    final bb = DateTime(b.year, b.month, b.day);
+    return bb.difference(aa).inDays.abs() + 1; // inclusive
+  }
+
+  Future<void> _submitCuti() async {
+    if (!_formKey.currentState!.validate() || startDate == null || endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lengkapi data cuti terlebih dahulu')),
+      );
+      return;
+    }
+
+    // validasi urutan tanggal
+    DateTime s = startDate!;
+    DateTime e = endDate!;
+    if (e.isBefore(s)) {
+      // tukar jika user memilih terbalik
+      final tmp = s; s = e; e = tmp;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harus login terlebih dahulu')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      final now = DateTime.now();
+      final data = {
+        'uid': user.uid,
+        'status': 'cuti',                 // dibaca indikator
+        'type': 'cuti',                   // kompat parser lain
+        'date': Timestamp.fromDate(s),    // dipakai filter bulan berjalan (ambil tanggal mulai)
+        'createdAt': Timestamp.fromDate(now),
+        'time': now.millisecondsSinceEpoch,
+        'reason': reasonCtrl.text.trim(),
+        'startDateText': s.toIso8601String().split('T').first,
+        'endDateText': e.toIso8601String().split('T').first,
+        'startEpoch': DateTime(s.year, s.month, s.day).millisecondsSinceEpoch,
+        'endEpoch': DateTime(e.year, e.month, e.day).millisecondsSinceEpoch,
+        'days': _daySpan(s, e),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('attendance')
+          .add(data);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cuti berhasil diajukan')),
+      );
+      // Opsional: reset form
+      setState(() {
+        startDate = null;
+        endDate = null;
+        reasonCtrl.clear();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengajukan cuti: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -213,18 +290,8 @@ class _LeavePageState extends State<LeavePage> {
                     ),
                   ),
                   _glassButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() && startDate != null && endDate != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Cuti berhasil diajukan')),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Lengkapi data cuti terlebih dahulu')),
-                        );
-                      }
-                    },
-                    label: 'Ajukan Cuti',
+                    onPressed: _saving ? null : _submitCuti,
+                    label: _saving ? 'Mengirim…' : 'Ajukan Cuti',
                     icon: Icons.send,
                   ),
                   const SizedBox(height: 8),

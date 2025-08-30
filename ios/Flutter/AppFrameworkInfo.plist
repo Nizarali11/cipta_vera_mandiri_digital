@@ -22,5 +22,9 @@
   <string>1.0</string>
   <key>MinimumOSVersion</key>
   <string>13.0</string>
+  <key>NSPhotoLibraryAddUsageDescription</key>
+<string>App perlu izin untuk menyimpan foto ke galeri.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>App perlu akses ke galeri.</string>
 </dict>
 </plist>

@@ -661,19 +661,29 @@ class _AttendancePageState extends State<AttendancePage> {
                     });
                     await _persistState();
 
-                    // Save check-in to Firestore
+                    // Save check-in to Firestore (subcollection so collectionGroup('attendance') can read it)
                     final user = FirebaseAuth.instance.currentUser;
                     if (user != null) {
-                      await FirebaseFirestore.instance.collection('attendance').add({
+                      final now = DateTime.now();
+                      final data = {
                         'uid': user.uid,
-                        'type': 'checkin',
-                        'timestamp': checkInAt,
+                        'type': 'checkin',              // tetap ada untuk kompatibilitas
+                        'status': 'checkin',            // dipakai oleh kalkulasi ring
+                        'date': Timestamp.fromDate(now),// dipakai oleh kalkulasi ring
+                        'createdAt': Timestamp.fromDate(now),
+                        'time': now.millisecondsSinceEpoch,
                         'latitude': _inPos?.latitude,
                         'longitude': _inPos?.longitude,
                         'selfiePath': _inSelfie?.path,
                         'backPhotoPath': _inBackPhoto?.path,
                         'project': _projectController.text,
-                      });
+                      };
+
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .collection('attendance')
+                          .add(data);
                     }
 
                     // Save to local Riwayat Absen (SharedPreferences)

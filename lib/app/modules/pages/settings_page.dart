@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'package:cipta_vera_mandiri_digital/app/modules/home/chat/contact_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/widgets/floating_nav_bar.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/pages/profile_page.dart' as profile;
+import 'package:cipta_vera_mandiri_digital/app/modules/pages/chat_list_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -26,25 +28,29 @@ class _SettingsPageState extends State<SettingsPage> {
   String _tentang = 'Sibuk';
   File? _fotoProfil;
 
+  // Per-UID helpers
+  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+  String _k(String base) => _uid == null ? base : '${base}_${_uid}';
+
   Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedName = prefs.getString('nama');
-    final savedAbout = prefs.getString('tentang');
-    final savedPath = prefs.getString('fotoProfil');
+    final savedName = prefs.getString(_k('nama'));
+    final savedAbout = prefs.getString(_k('tentang'));
+    final savedPath = prefs.getString(_k('fotoProfil'));
 
     final dir = await getApplicationDocumentsDirectory();
-    final fixedPath = '${dir.path}/profile.jpg';
+    final fixedPath = '${dir.path}/profile_${_uid ?? 'local'}.jpg';
 
     File? resolved;
     if (savedPath != null && File(savedPath).existsSync()) {
       resolved = File(savedPath);
     } else if (File(fixedPath).existsSync()) {
       resolved = File(fixedPath);
-      await prefs.setString('fotoProfil', fixedPath); // self-heal
+      await prefs.setString(_k('fotoProfil'), fixedPath); // self-heal
     } else {
       resolved = null;
       if (savedPath != null) {
-        await prefs.remove('fotoProfil');
+        await prefs.remove(_k('fotoProfil'));
       }
     }
 
@@ -254,9 +260,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: Column(
                         children: [
                           _settingsTile(
-                            icon: Icons.face,
-                            text: 'Avatar',
-                            onTap: () {},
+                            icon: Icons.contacts,
+                            text: 'Kontak',
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ContactListPage()),
+                              );
+                            },
                             isFirst: true,
                           ),
                           _divider(),
@@ -310,15 +321,14 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                           _divider(),
                           _settingsTile(
-                            icon: Icons.lock_outline,
-                            text: 'Privasi',
-                            onTap: () {},
-                          ),
-                          _divider(),
-                          _settingsTile(
                             icon: Icons.chat_bubble_outline,
                             text: 'Chat',
-                            onTap: () {},
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ChatListPage()),
+                              );
+                            },
                           ),
                           _divider(),
                           _settingsTile(

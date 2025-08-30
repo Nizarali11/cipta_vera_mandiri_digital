@@ -45,12 +45,17 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
       final prefs = await SharedPreferences.getInstance();
-      final key = 'profile_photo_${user.uid}';
-      final path = prefs.getString(key);
+
+      // Prefer key baru per-UID agar konsisten: fotoProfil_<uid>
+      String? path = prefs.getString('fotoProfil_${user.uid}');
+
+      // Backward compatibility: key lama yang pernah dipakai di halaman ini
+      path ??= prefs.getString('profile_photo_${user.uid}');
+
       if (path != null && path.isNotEmpty && File(path).existsSync()) {
         setState(() {
           _localPhotoPath = path;
-          _imageFile = File(path);
+          _imageFile = File(path!);
         });
       }
     } catch (e) {
@@ -155,7 +160,10 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
       await source.copy(destFile.path);
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('profile_photo_$uid', destFile.path);
+      // simpan dengan key konsisten per-UID
+      await prefs.setString('fotoProfil_$uid', destFile.path);
+      // hapus key lama jika ada
+      await prefs.remove('profile_photo_$uid');
 
       return destFile.path;
     } catch (e) {
@@ -204,6 +212,14 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
         'profileCompleted': true,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+
+      // Simpan PIN yang sudah digenerate agar konsisten di seluruh app
+      if (_pinController.text.trim().isNotEmpty) {
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'pin': _pinController.text.trim(),
+        }, SetOptions(merge: true));
+      }
 
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');
@@ -350,7 +366,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                     ],
                   ),
 
-                  const SizedBox(height: 0),
+                  const SizedBox(height: 20),
                   // Tombol kamera & galeri
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -386,7 +402,6 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                       const SizedBox(height: 100),
                       // Galeri (glass button)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(30),
@@ -420,7 +435,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                     ],
                   ),
 
-                  const SizedBox(height: 0),
+                  const SizedBox(height: 15),
 
                   // Heading di atas form
                   Align(

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AttendanceRecord {
   final DateTime date;          // tanggal dibuat / hari absen
@@ -45,13 +46,17 @@ class AttendanceRecord {
 }
 
 class AttendanceHistory {
-  static const _key = 'attendance_history';
+  static const _baseKey = 'attendance_history';
+  static String _keyForUid(String uid) => '${_baseKey}_$uid';
+  static String? _currentUid() => FirebaseAuth.instance.currentUser?.uid;
   static const Duration _retention = Duration(days: 30);
 
   /// Ambil semua riwayat (paling baru di atas)
   static Future<List<AttendanceRecord>> load() async {
+    final uid = _currentUid();
+    if (uid == null || uid.isEmpty) return [];
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
+    final raw = prefs.getString(_keyForUid(uid));
     if (raw == null || raw.isEmpty) return [];
 
     final List list = jsonDecode(raw) as List;
@@ -77,9 +82,11 @@ class AttendanceHistory {
 
   /// Simpan list riwayat (overwrite)
   static Future<void> saveAll(List<AttendanceRecord> items) async {
+    final uid = _currentUid();
+    if (uid == null || uid.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-      _key,
+      _keyForUid(uid),
       jsonEncode(items.map((e) => e.toJson()).toList()),
     );
   }
@@ -96,6 +103,9 @@ class AttendanceHistory {
     String? project,
     String? note,
   }) async {
+    final uid = _currentUid();
+    if (uid == null || uid.isEmpty) return; 
+
     final items = await load();
     final keyDay = _dayKey(date);
     final idx = items.indexWhere((r) => _dayKey(r.date) == keyDay);
@@ -126,8 +136,10 @@ class AttendanceHistory {
   }
 
   static Future<void> clearAll() async {
+    final uid = _currentUid();
+    if (uid == null || uid.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
+    await prefs.remove(_keyForUid(uid));
   }
 
   static String _dayKey(DateTime d) =>

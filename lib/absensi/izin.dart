@@ -1,6 +1,8 @@
 // ================= Izin Page =================
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PermissionPage extends StatefulWidget {
   const PermissionPage({super.key});
@@ -15,6 +17,65 @@ class _PermissionPageState extends State<PermissionPage> {
   final reasonCtrl = TextEditingController();
   TimeOfDay? startTime;
   TimeOfDay? endTime;
+  bool _saving = false;
+
+  int _toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
+
+  Future<void> _submitIzin() async {
+    if (!_formKey.currentState!.validate() || startTime == null || endTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lengkapi data izin terlebih dahulu')),
+      );
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harus login terlebih dahulu')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      final now = DateTime.now();
+      final data = {
+        'uid': user.uid,
+        'status': 'izin',                 // dibaca indikator
+        'type': 'izin',                   // kompatibel parser lain
+        'date': Timestamp.fromDate(now),  // dibaca indikator (bulan berjalan)
+        'createdAt': Timestamp.fromDate(now),
+        'time': now.millisecondsSinceEpoch,
+        'reason': reasonCtrl.text.trim(),
+        'startTimeText': startTime!.format(context),
+        'endTimeText': endTime!.format(context),
+        'startMinutes': _toMinutes(startTime!),
+        'endMinutes': _toMinutes(endTime!),
+      };
+
+      // Simpan di subkoleksi agar collectionGroup('attendance') menangkapnya
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('attendance')
+          .add(data);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Izin berhasil diajukan')),
+      );
+      // opsional: kembali atau reset
+      // Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengajukan izin: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -204,18 +265,8 @@ class _PermissionPageState extends State<PermissionPage> {
                     ),
                   ),
                   _glassButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() && startTime != null && endTime != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Izin berhasil diajukan')),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Lengkapi data izin terlebih dahulu')),
-                        );
-                      }
-                    },
-                    label: 'Ajukan Izin',
+                    onPressed: _saving ? null : _submitIzin,
+                    label: _saving ? 'Mengirim…' : 'Ajukan Izin',
                     icon: Icons.send,
                   ),
                   const SizedBox(height: 8),

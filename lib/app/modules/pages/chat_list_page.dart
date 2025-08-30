@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cipta_vera_mandiri_digital/app/modules/home/chat/chat_page.dart';
+import 'package:cipta_vera_mandiri_digital/app/modules/home/chat/contact_list_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -65,13 +66,13 @@ class _ChatListPageState extends State<ChatListPage> {
         ),
         actions: [
           _glassIconButton(
-            icon: Icons.photo_camera_outlined,
-            onTap: () {},
-          ),
-          const SizedBox(width: 8),
-          _glassIconButton(
-            icon: Icons.add,
-            onTap: () => _startChatByPin(context),
+            icon: Icons.contacts,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ContactListPage()),
+              );
+            },
           ),
           const SizedBox(width: 12),
         ],
@@ -135,8 +136,9 @@ class _ChatListPageState extends State<ChatListPage> {
                           final peerInfo = (data['memberInfo'] ?? {})[peerUid] ?? {};
                           return {
                             'chatId': d.id,
-                            'name': peerInfo['name'] ?? 'Unknown',
-                            'avatarUrl': peerInfo['avatarUrl'] ?? '',
+                            'peerUid': peerUid,
+                            'name': (peerInfo['name'] ?? '').toString().isEmpty ? 'Unknown' : (peerInfo['name'] as String),
+                            'avatarUrl': (peerInfo['avatarUrl'] ?? '').toString(),
                             'lastMessage': data['lastMessage'] ?? '',
                             'lastMessageAt': data['lastMessageAt'],
                             'unread': (data['unread']?[user?.uid] ?? 0) as int,
@@ -189,17 +191,61 @@ class _ChatListPageState extends State<ChatListPage> {
                           padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
                           itemBuilder: (context, i) {
                             final c = items[i];
-                            return GestureDetector(
-                              onTap: () {
+                            final needFetch = ((c['name'] ?? '') as String).isEmpty || (c['name'] as String) == 'Unknown';
+
+                            Widget buildTile(Map cc) => GestureDetector(
+                              onTap: () async {
+                                final uid = FirebaseAuth.instance.currentUser?.uid;
+                                if (uid != null) {
+                                  try {
+                                    await FirebaseFirestore.instance
+                                        .collection('chats')
+                                        .doc(cc['chatId'])
+                                        .set({'unread': {uid: 0}}, SetOptions(merge: true));
+                                  } catch (_) {}
+                                }
+                                if (!context.mounted) return;
                                 Navigator.push(context, MaterialPageRoute(
                                   builder: (_) => ChatPage(
-                                    chatId: c['chatId'],
-                                    peerName: c['name'],
-                                    peerAvatarUrl: (c['avatarUrl'] as String).isEmpty ? null : c['avatarUrl'],
+                                    chatId: cc['chatId'],
+                                    peerName: cc['name'],
+                                    peerAvatarUrl: (cc['avatarUrl'] as String).isEmpty ? null : cc['avatarUrl'],
                                   ),
                                 ));
                               },
-                              child: _chatTileDynamic(c),
+                              onLongPress: () => _showChatActions(context, cc['chatId'], cc['name']),
+                              child: _chatTileDynamic(cc),
+                            );
+
+                            if (!needFetch) {
+                              return buildTile(c);
+                            }
+
+                            return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                              future: FirebaseFirestore.instance.collection('users').doc(c['peerUid']).get(),
+                              builder: (context, snap) {
+                                var cc = Map.of(c);
+                                if (snap.connectionState == ConnectionState.done && snap.hasData && snap.data!.data() != null) {
+                                  final d = snap.data!.data()!;
+                                  final name = (d['name'] ?? d['displayName'] ?? d['username'] ?? d['fullName'] ?? 'Teman').toString();
+                                  final avatar = (d['avatarUrl'] ?? d['photoUrl'] ?? d['profilePhoto'] ?? '').toString();
+                                  cc['name'] = name;
+                                  if ((cc['avatarUrl'] as String).isEmpty) cc['avatarUrl'] = avatar;
+
+                                  // tulis balik ke chat.memberInfo agar next load tidak Unknown
+                                  try {
+                                    FirebaseFirestore.instance.collection('chats').doc(cc['chatId']).set({
+                                      'memberInfo': {
+                                        cc['peerUid']: {
+                                          'name': name,
+                                          'avatarUrl': avatar,
+                                        }
+                                      }
+                                    }, SetOptions(merge: true));
+                                  } catch (_) {}
+                                }
+                                return buildTile(cc);
+                              },
                             );
                           },
                           separatorBuilder: (_, __) => const SizedBox(height: 10),
@@ -249,8 +295,7 @@ class _ChatListPageState extends State<ChatListPage> {
   }
 
   Widget _filterChips() {
-    // Since _all is removed, we can't count unread/favorite as before.
-    // Show static labels or implement counting from Firestore if needed.
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       scrollDirection: Axis.horizontal,
@@ -296,7 +341,7 @@ class _ChatListPageState extends State<ChatListPage> {
       } else {
         dt = DateTime.now();
       }
-      // Show time as 'HH:mm' or 'dd/MM' if not today
+    
       final now = DateTime.now();
       if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
         timeString = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
@@ -317,11 +362,29 @@ class _ChatListPageState extends State<ChatListPage> {
           ),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: (c['avatarUrl'] as String).isNotEmpty
-                    ? NetworkImage(c['avatarUrl'])
-                    : const AssetImage('lib/app/assets/images/cvm.png') as ImageProvider,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: (c['avatarUrl'] as String).isNotEmpty
+                        ? NetworkImage(c['avatarUrl'])
+                        : const AssetImage('lib/app/assets/images/cvm.png') as ImageProvider,
+                  ),
+                  if ((c['unread'] ?? 0) > 0)
+                    Positioned(
+                      right: -1,
+                      top: -1,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF25D366),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -436,7 +499,7 @@ class _ChatListPageState extends State<ChatListPage> {
       // ignore and continue
     }
 
-    // 3) Fallback: client-side scan (bounded) on users, then profiles
+  
     Future<DocumentSnapshot<Map<String, dynamic>>?> scan(String coll) async {
       try {
         final snap = await db.collection(coll).limit(500).get();
@@ -636,6 +699,10 @@ class _ChatListPageState extends State<ChatListPage> {
           'avatarUrl': (peerData['avatarUrl'] ?? '').toString(),
         },
       },
+      'unread': {
+        myUid: 0,
+        peerUid: 0,
+      },
       'lastMessage': FieldValue.delete(),
       'lastMessageAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -650,6 +717,83 @@ class _ChatListPageState extends State<ChatListPage> {
         ),
       ),
     );
+  }
+  void _showChatActions(BuildContext context, String chatId, String name) {
+    final rootContext = context; // capture parent page context safely
+    final messenger = ScaffoldMessenger.maybeOf(rootContext);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.12),
+                border: Border.all(color: Colors.white.withOpacity(0.35)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.cleaning_services, color: Colors.white),
+                    title: const Text('Bersihkan chat', style: TextStyle(color: Colors.white)),
+                    onTap: () async {
+                      Navigator.of(rootContext).pop(); // close the sheet using the parent context
+                      await _clearChatMessages(chatId);
+                      if (!mounted || !rootContext.mounted) return;
+                      (messenger ?? ScaffoldMessenger.of(rootContext)).showSnackBar(
+                        const SnackBar(content: Text('Chat dibersihkan')),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete_forever, color: Colors.white),
+                    title: const Text('Hapus chat', style: TextStyle(color: Colors.white)),
+                    onTap: () async {
+                      Navigator.of(rootContext).pop(); // close the sheet using the parent context
+                      await _deleteChat(chatId);
+                      if (!mounted || !rootContext.mounted) return;
+                      (messenger ?? ScaffoldMessenger.of(rootContext)).showSnackBar(
+                        const SnackBar(content: Text('Chat dihapus')),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _clearChatMessages(String chatId) async {
+    final db = FirebaseFirestore.instance;
+    const int page = 400; // aman < 500 per batch
+    while (true) {
+      final snap = await db.collection('chats').doc(chatId).collection('messages').limit(page).get();
+      if (snap.docs.isEmpty) break;
+      final batch = db.batch();
+      for (final d in snap.docs) {
+        batch.delete(d.reference);
+      }
+      await batch.commit();
+      if (snap.docs.length < page) break;
+    }
+    // Reset ringkasan
+    await db.collection('chats').doc(chatId).set({
+      'lastMessage': FieldValue.delete(),
+      'lastMessageAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> _deleteChat(String chatId) async {
+    await _clearChatMessages(chatId);
+    await FirebaseFirestore.instance.collection('chats').doc(chatId).delete();
   }
 }
 
